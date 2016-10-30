@@ -14,23 +14,12 @@ find_package(ZLIB REQUIRED )
 find_package(Eigen3 REQUIRED )
 
 set( EXTERNAL_PROJECTS  )
-include( ${PROJECT_SOURCE_DIR}/cmake/BuildG3Log.cmake )
 
-
-
-##==== Check and define the architecture (this is used in e.g. Zed.cmake )
-## Architecture-specific optimizations
-option( CUDA_VERSION "Use CUDA" "")
-
-##=====  Support for the Zed stereo camera ==========================
-option( USE_ZED_CAMERA "Use Zed Stereo camera" OFF )
-if( USE_ZED_CAMERA )
-	include( ${PROJECT_SOURCE_DIR}/cmake/Zed.cmake )
-	set( CUDA_VERSION 6.5 )
-endif()
+include( ${PROJECT_SOURCE_DIR}/cmake/Zed.cmake )
+set( CUDA_VERSION 8.0 )
 
 ## Default OpenCV version
-set( OPENCV_VERSION 2.4 )
+set( OPENCV_VERSION 3.1 )
 list(APPEND OPENCV_COMPONENTS core highgui imgproc video calib3d)
 
 EXECUTE_PROCESS( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
@@ -44,33 +33,29 @@ if( ${ARCHITECTURE} STREQUAL "aarch64" )
 
 elseif( ${ARCHITECTURE} STREQUAL "x86_64" )
 	# x86 version uses Zed 1.0 SDK which is linked against Opencv 3.1
-	if( ZED_VERSION VERSION_EQUAL "1.0.0")
-		set( OPENCV_VERSION 3.1 )
-		set( CUDA_VERSION 7.5 )
-		list( APPEND OPENCV_COMPONENTS videoio imgcodecs )
-	endif()
+	# if( ZED_VERSION VERSION_EQUAL "1.0.0")
+	# 	set( OPENCV_VERSION 3.1 )
+	# 	set( CUDA_VERSION 7.5 )
+	# 	list( APPEND OPENCV_COMPONENTS videoio imgcodecs )
+	# endif()
 
   # -DENABLE_SSE enables Jakob's original SSE optimizations in his code,
 	# it has nothing to do with compiler behavior
   set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -msse4.1 -msse3 -msse2 -msse -march=native -DENABLE_SSE" )
 endif()
 
-option(USE_GPU "Build GPU-accelerated tools" OFF)
-if( USE_GPU )
-	add_definitions( -DUSE_GPU )
-	list(APPEND OPENCV_COMPONENTS gpu )
-endif()
+# option(USE_GPU "Build GPU-accelerated tools" OFF)
+# if( USE_GPU )
+# 	add_definitions( -DUSE_GPU )
+# 	list(APPEND OPENCV_COMPONENTS gpu )
+# endif()
 
-
-if( CUDA_VERSION )
-	find_package( CUDA REQUIRED ${CUDA_VERSION} )
-endif()
+find_package( CUDA REQUIRED ${CUDA_VERSION} )
 
 ## C++ flags applied to all builds
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 ## Configure OpenCV ##
-
 
 find_package(OpenCV ${OPENCV_VERSION} COMPONENTS ${OPENCV_COMPONENTS} REQUIRED)
 
@@ -79,21 +64,17 @@ if(APPLE)
 	set( CMAKE_MACOSX_RPATH OFF )
 endif()
 
-
-include( ${PROJECT_SOURCE_DIR}/cmake/BuildLibLogger.cmake )
-message( ${LIBLOGGER_INCLUDE_DIRS})
+# include( ${PROJECT_SOURCE_DIR}/cmake/BuildLibLogger.cmake )
+include( ${PROJECT_SOURCE_DIR}/cmake/BuildLibVideoTools.cmake )
 
 ## Set global include paths
-set( VIDEOIO_INCLUDE_DIRS
-	${G3LOG_INCLUDE_DIR}
+set( VIDEOIO_ZED_INCLUDE_DIRS
   ${CMAKE_SOURCE_DIR}/lib
   ${OpenCV_INCLUDE_DIRS}
 	${EIGEN3_INCLUDE_DIR}
- 	${LIBLOGGER_INCLUDE_DIRS} )
+ 	${LIBVIDEO_TOOLS_INCLUDE_DIRS} )
 
-message( ${VIDEOIO_INCLUDE_DIRS} )
-
-include_directories( ${VIDEOIO_INCLUDE_DIRS} )
+include_directories( ${VIDEOIO_ZED_INCLUDE_DIRS} )
 
 add_subdirectory("lib/")
 add_subdirectory("tools/")
@@ -106,8 +87,6 @@ if( BUILD_UNIT_TESTS )
   add_subdirectory( test/unit/ )
 
 endif()
-
-
 
 
 add_custom_target( deps DEPENDS ${EXTERNAL_PROJECTS} )
