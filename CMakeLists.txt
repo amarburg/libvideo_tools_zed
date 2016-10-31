@@ -64,17 +64,19 @@ if(APPLE)
 	set( CMAKE_MACOSX_RPATH OFF )
 endif()
 
-# include( ${PROJECT_SOURCE_DIR}/cmake/BuildLibLogger.cmake )
+
 include( ${PROJECT_SOURCE_DIR}/cmake/BuildLibVideoTools.cmake )
 
 ## Set global include paths
-set( VIDEOIO_ZED_INCLUDE_DIRS
-  ${CMAKE_SOURCE_DIR}/lib
+set( LIBVIDEO_TOOLS_INCLUDE_DIRS
+  ${CMAKE_SOURCE_DIR}/include
+	${CUDA_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 	${EIGEN3_INCLUDE_DIR}
+	${ZED_INCLUDE_DIRS}
  	${LIBVIDEO_TOOLS_INCLUDE_DIRS} )
 
-include_directories( ${VIDEOIO_ZED_INCLUDE_DIRS} )
+include_directories( ${LIBVIDEO_TOOLS_INCLUDE_DIRS} )
 
 add_subdirectory("lib/")
 add_subdirectory("tools/")

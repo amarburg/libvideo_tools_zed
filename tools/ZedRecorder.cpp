@@ -1,4 +1,6 @@
 
+// TODO:   Reduce the DRY
+
 #include <string>
 using namespace std;
 
@@ -8,10 +10,8 @@ using namespace std;
 #include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
 
-#ifdef USE_ZED
-	#include <zed/Camera.hpp>
-  #include "util/ZedUtils.h"
-#endif
+#include <zed/Camera.hpp>
+#include "util/ZedUtils.h"
 
 #include <tclap/CmdLine.h>
 
@@ -31,9 +31,6 @@ namespace fs = boost::filesystem;
 
 using namespace lsd_slam;
 
-#ifndef USE_ZED
-	#error "ZedRecorder shouldn't be built unless USE_ZED is defined."
-#endif
 
 bool keepGoing = true;
 

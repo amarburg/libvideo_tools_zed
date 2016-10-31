@@ -1,6 +1,6 @@
 
 include_directories(
-  ${VIDEOIO_INCLUDE_DIRS}
+  ${LIBVIDEO_TOOLS_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
@@ -8,9 +8,9 @@ include_directories(
 #    "${CMAKE_CXX_FLAGS} -ggdb"
 # )
 
-add_executable( Recorder Recorder.cpp)
-target_link_libraries( Recorder libvideoio )
-set_target_properties( Recorder PROPERTIES COMPILE_FLAGS "-ggdb")
+add_executable( ZedRecorder ZedRecorder.cpp)
+target_link_libraries( ZedRecorder libvideo_tools_zed )
+set_target_properties( ZedRecorder PROPERTIES COMPILE_FLAGS "-ggdb")
 
 
 # # build image node

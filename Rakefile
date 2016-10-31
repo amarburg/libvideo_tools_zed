@@ -5,7 +5,8 @@ task :default => "debug:test"
 load 'config.rb' if FileTest::exists? 'config.rb'
 
 ['Debug','Release'].each { |build_type|
-  namespace build_type.downcase.to_sym do
+  build_namespace = build_type.downcase.to_sym
+  namespace build_namespace do
     build_dir = ENV['BUILD_DIR'] || "build-#{build_type}"
 
     task :env do
@@ -28,7 +29,13 @@ load 'config.rb' if FileTest::exists? 'config.rb'
     task :test => :build do
       sh "cd %s && make unit_test" % build_dir
     end
+
+    task :distclean do
+      sh "rm -rf #{build_dir}"
+    end
   end
+
+  task :distclean => "#{build_namespace}:distclean"
 }
 
 namespace :dependencies do
