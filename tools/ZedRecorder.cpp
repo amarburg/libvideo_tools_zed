@@ -11,17 +11,17 @@ using namespace std;
 namespace fs = boost::filesystem;
 
 #include <zed/Camera.hpp>
-#include "util/ZedUtils.h"
+#include "ZedUtils.h"
 
 #include <tclap/CmdLine.h>
 
 #include <g3log/g3log.hpp>
 #include <g3log/logworker.hpp>
 
-#include "util/G3LogSinks.h"
+#include "libvideo_tools/G3LogSinks.h"
 
-#include "util/DataSource.h"
-#include "util/Undistorter.h"
+#include "libvideo_tools/DataSource.h"
+#include "libvideo_tools/Undistorter.h"
 
 #include "logger/LogWriter.h"
 
@@ -156,12 +156,11 @@ int main( int argc, char** argv )
 				sl::zed::InitParams initParams;
 				initParams.mode = zedMode;
 				initParams.verbose = verboseInit;
-				iniParams.disableSelfCalib = disableSelfCalibSwitch.getValue();
+				initParams.disableSelfCalib = disableSelfCalibSwitch.getValue();
         err = camera->init( initParams );
 #else
-				// Disabling self-calibration
 				err = camera->init( zedMode, whichGpu, verboseInit, false, disableSelfCalibSwitch.getValue() );
- #endif
+#endif
 			}
 
 			if (err != sl::zed::SUCCESS) {

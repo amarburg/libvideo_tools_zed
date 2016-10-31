@@ -1,4 +1,6 @@
 
+#include <g3log/g3log.hpp>
+
 #include <zed/Camera.hpp>
 
 #ifndef USE_ZED

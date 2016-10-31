@@ -13,8 +13,26 @@
 namespace lsd_slam
 {
 
+// "Casting" structs
+struct ZedCamera : public Camera
+{
+	ZedCamera( sl::zed::StereoParameters* params )
+      : Camera( params->LeftCam.fx, params->LeftCam.fy,
+ 								params->LeftCam.cx, params->LeftCam.cy )
+    {;}
+
+};
+
+struct ZedImageSize : public ImageSize
+{
+	ZedImageSize( const sl::zed::resolution &res )
+		: ImageSize( res.width, res.height)
+	{;}
+};
+
+
 UndistorterZED::UndistorterZED( sl::zed::Camera *camera  )
-	: UndistorterLogger( camera->getImageSize(), camera->getParameters() )
+	: UndistorterLogger( ZedImageSize(camera->getImageSize()), ZedCamera( camera->getParameters() ))
 {
 	unsigned int h = camera->getImageSize().height,
 							 w = camera->getImageSize().width;
