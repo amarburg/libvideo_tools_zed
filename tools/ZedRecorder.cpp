@@ -29,6 +29,8 @@ namespace fs = boost::filesystem;
 #include "ImageOutput.h"
 #include "VideoOutput.h"
 
+#include "ZedSource.h"
+
 using namespace lsd_slam;
 
 
@@ -149,19 +151,12 @@ int main( int argc, char** argv )
 			}
 
 			sl::zed::ERRCODE err = sl::zed::LAST_ERRCODE;
-			if( svoOutputArg.isSet() ) {
-				err = camera->initRecording( svoOutputArg.getValue() );
-			} else {
-#ifdef ZED_1_0
-				sl::zed::InitParams initParams;
-				initParams.mode = zedMode;
-				initParams.verbose = verboseInit;
-				initParams.disableSelfCalib = disableSelfCalibSwitch.getValue();
-        err = camera->init( initParams );
-#else
-				err = camera->init( zedMode, whichGpu, verboseInit, false, disableSelfCalibSwitch.getValue() );
-#endif
-			}
+			sl::zed::InitParams initParams;
+			initParams.mode = zedMode;
+			initParams.verbose = verboseInit;
+			initParams.disableSelfCalib = disableSelfCalibSwitch.getValue();
+			err = camera->init( initParams );
+
 
 			if (err != sl::zed::SUCCESS) {
 				LOG(WARNING) << "Unable to init the Zed camera (" << err << "): " << errcode2str(err);
@@ -169,11 +164,15 @@ int main( int argc, char** argv )
 				exit(-1);
 			}
 
+			if( svoOutputArg.isSet() ) {
+				err = camera->enableRecording( svoOutputArg.getValue() );
+			}
+
 			dataSource = new ZedSource( camera, depthSwitch.getValue() );
 
 			if( calibOutputArg.isSet() ) {
 					LOG(INFO) << "Saving calibration to \"" << calibOutputArg.getValue() << "\"";
-					lsd_slam::UndistorterLogger::calibrationFromZed( camera, calibOutputArg.getValue() );
+					calibrationFromZed( camera, calibOutputArg.getValue() );
 			}
 		}
 
@@ -231,17 +230,23 @@ int main( int argc, char** argv )
 
 			if( svoOutputArg.isSet() ) {
 
-				if( camera->record() ) {
+				if( camera->grab() ) {
 					LOG(WARNING) << "Error occured while recording from camera";
-				} else if( count % skip == 0 ) {
-					// According to the docs, this:
-					//		Get[s] the current side by side YUV 4:2:2 frame, CPU buffer.
-					sl::zed::Mat slRawImage( camera->getCurrentRawRecordedFrame() );
-					// Make a copy before enqueueing
-					Mat rawCopy;
-					sl::zed::slMat2cvMat( slRawImage ).reshape( 2, 0 ).copyTo( rawCopy );
-					display.showRawStereoYUV( rawCopy );
 				}
+
+				camera->record();
+
+				// } else if( count % skip == 0 ) {
+				// 	// According to the docs, this:
+				// 	//		Get[s] the current side by side YUV 4:2:2 frame, CPU buffer.
+				// 	sl::zed::Mat slRawImage( camera->getCurrentRawRecordedFrame() );
+				// 	// Make a copy before enqueueing
+				// 	Mat rawCopy;
+				// 	sl::zed::slMat2cvMat( slRawImage ).reshape( 2, 0 ).copyTo( rawCopy );
+				// 	display.showRawStereoYUV( rawCopy );
+				// }
+
+
 
 
 			} else {
