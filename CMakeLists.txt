@@ -26,7 +26,10 @@ EXECUTE_PROCESS( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTUR
 message( STATUS "Architecture: ${ARCHITECTURE}" )
 if( ${ARCHITECTURE} STREQUAL "aarch64" )
 	# Jetson version uses OpenCV4Tegra from NVidia
-	#set( OPENCV_VERSION 2.4 )
+	set( OPENCV_VERSION 2.4 )
+
+	# This is needed to work around a problem in Jetpack 2.3 / Cuda 8.0
+	set(CUDA_USE_STATIC_CUDA_RUNTIME OFF)
 
 	## For compilation on Jetson TX1
 	set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8-a") # -DENABLE_NEON" )
@@ -39,7 +42,7 @@ elseif( ${ARCHITECTURE} STREQUAL "x86_64" )
 	# 	list( APPEND OPENCV_COMPONENTS videoio imgcodecs )
 	# endif()
 
-  # -DENABLE_SSE enables Jakob's original SSE optimizations in his code,
+	  # -DENABLE_SSE enables Jakob's original SSE optimizations in his code,
 	# it has nothing to do with compiler behavior
   set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -msse4.1 -msse3 -msse2 -msse -march=native -DENABLE_SSE" )
 endif()

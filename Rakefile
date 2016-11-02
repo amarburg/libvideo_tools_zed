@@ -7,7 +7,7 @@ load 'config.rb' if FileTest::exists? 'config.rb'
 ['Debug','Release'].each { |build_type|
   build_namespace = build_type.downcase.to_sym
   namespace build_namespace do
-    build_dir = ENV['BUILD_DIR'] || "build-#{build_type}"
+    build_dir = ENV['BUILD_DIR'] || "build-#{`arch`.chomp}-#{build_type.downcase}"
 
     task :env do
       sh "echo $OpenCV_DIR"

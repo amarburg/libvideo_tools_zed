@@ -11,7 +11,7 @@ using namespace std;
 namespace fs = boost::filesystem;
 
 #include <zed/Camera.hpp>
-#include "ZedUtils.h"
+#include "libvideo_tools_zed/ZedUtils.h"
 
 #include <tclap/CmdLine.h>
 
@@ -29,7 +29,7 @@ namespace fs = boost::filesystem;
 #include "ImageOutput.h"
 #include "VideoOutput.h"
 
-#include "ZedSource.h"
+#include "libvideo_tools_zed/ZedSource.h"
 
 using namespace lsd_slam;
 

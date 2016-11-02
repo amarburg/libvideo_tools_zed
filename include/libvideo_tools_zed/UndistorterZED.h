@@ -2,6 +2,7 @@
 
 
 #include "libvideo_tools/Undistorter.h"
+#include "ZedUtils.h"
 
 #include <zed/Camera.hpp>
 

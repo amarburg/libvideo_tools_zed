@@ -6,6 +6,11 @@
 #include "libvideo_tools/Camera.h"
 #include "libvideo_tools/ImageSize.h"
 
+// As of API 1.0.0, the resolutions have changed slightly:
+// 2.2K	4416x1242	15fps	Wide
+// 1080p	3840x1080	15/30fps	Wide
+// 720p	2560x720	15/30/60fps	Extra Wide
+// VGA (Wide)	1344x376	15/30/60/100fps	Extra Wide
 
 // "Casting" structs
 struct ZedCamera : public lsd_slam::Camera
