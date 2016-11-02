@@ -25,7 +25,7 @@ public:
 
     _fps = _cam->getCurrentFPS();
 
-    LOG(INFO) << "fps: " << _fps;
+    LOG(INFO) << "Camera reports fps: " << _fps;
   }
 
   ZedSource( const ZedSource & ) = delete;
