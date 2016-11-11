@@ -1,80 +1,74 @@
 
 task :default => "debug:test"
 
-@cmake_opts = ['-D BUILD_UNIT_TESTS:BOOL=True']
-load 'config.rb' if FileTest::exists? 'config.rb'
+@conan_opts = {  build_parallel: 'False' }
+@conan_settings = {  }
+@conan_scopes = { build_tests: 'True' }
+@conan_build = "missing"
+load 'config.rb' if FileTest.readable? 'config.rb'
+
+build_root = ENV['BUILD_ROOT'] || "build"
 
 ['Debug','Release'].each { |build_type|
-  build_namespace = build_type.downcase.to_sym
-  namespace build_namespace do
-    build_dir = ENV['BUILD_DIR'] || "build-#{`arch`.chomp}-#{build_type.downcase}"
+  namespace build_type.downcase.to_sym do
+    build_dir = ENV['BUILD_DIR'] || "#{build_root}-#{build_type}"
 
-    task :env do
-      sh "echo $OpenCV_DIR"
-    end
+    @conan_settings[:build_type] = build_type
+    conan_opts = @conan_opts.each_pair.map { |key,val| "-o %s=%s" % [key,val] } +
+                @conan_settings.each_pair.map { |key,val| "-s %s=%s" % [key,val] } +
+                @conan_scopes.each_pair.map { |key,val| "--scope %s=%s" % [key,val] }
 
     task :build do
-      unless FileTest::directory? build_dir
-        FileUtils::mkdir build_dir
-        sh "cd %s && cmake -D CMAKE_BUILD_TYPE:STRING=\"%s\" %s  .." % [build_dir, build_type, @cmake_opts.join(' ')]
+      FileUtils::mkdir build_dir unless FileTest::directory? build_dir
+      chdir build_dir do
+        sh "conan install %s .. --build=%s" % [conan_opts.join(' '), @conan_build]
+        sh "conan build .."
       end
-
-      if !FileTest::exists? build_dir + "/g3log/src/g3log-build/libg3logger.a"
-        sh "cd %s && make deps" % build_dir
-      end
-
-      sh "cd %s && make" % build_dir
     end
 
     task :test => :build do
-      sh "cd %s && make unit_test" % build_dir
-    end
-
-    task :distclean do
-      sh "rm -rf #{build_dir}"
+      #
     end
   end
-
-  task :distclean => "#{build_namespace}:distclean"
 }
 
+namespace :conan  do
+  desc "Export as Conan package"
+  task :export => :distclean do
+    sh "conan export amarburg/testing"
+  end
+
+  task :upload => :export do
+    sh "conan upload libvideoio/master@amarburg/testing"
+  end
+end
+
+task :distclean do
+  sh "rm -rf build-*"
+end
+
 namespace :dependencies do
-  task :linux do
-    sh "sudo apt-get install -y cmake opencv-dev"
+
+  task :trusty do
+    sh "sudo apt-get install -y cmake libopencv-dev libtclap-dev libboost-all-dev"
+    sh "pip install conan"
   end
 
   task :osx do
     sh "brew update"
     sh "brew tap homebrew/science"
-    sh "brew install cmake homebrew/science/opencv"
+    sh "brew install homebrew/science/opencv tclap conan"
+  end
+
+  namespace :travis do
+
+    task :linux => "dependencies:trusty"
+
+    task :osx => [:pip_uninstall_numpy, "dependencies:osx"]
+
+    task :pip_uninstall_numpy do
+      sh "pip uninstall -y numpy"
+    end
+
   end
 end
-
-
-#
-# BUILD_DIR = "build"
-#
-#
-# task :default => :build
-#
-# task :build do
-#   unless FileTest::exists?( BUILD_DIR + "/g3log/src/g3log-build/libg3logger.a" )
-#     sh "cd %s && make deps" % BUILD_DIR
-#   end
-#
-#   sh "cd %s && make" % BUILD_DIR
-# end
-#
-# task :test do
-#   sh "cd %s && make unit_test" % BUILD_DIR
-# end
-#
-# task :bootstrap do
-# opencv_24_dir = "/opt/opencv-2.4/share/OpenCV"
-#
-#   FileUtils::mkdir BUILD_DIR unless FileTest::directory? BUILD_DIR
-#   sh "cd %s && OpenCV_DIR=#{opencv_24_dir} cmake -D CMAKE_BUILD_TYPE:STRING=\"Debug\" " \
-#       "-D LOCAL_LIBACTIVE_OBJECT:FILEPATH=../libactive_object " \
-#       "-D LOCAL_LIBLOGGER:FILEPATH=../liblogger " \
-#       ".." % BUILD_DIR
-# end

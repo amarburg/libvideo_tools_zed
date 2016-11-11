@@ -2,7 +2,7 @@
 
 
 #include <zed/Camera.hpp>
-#include "libvideo_tools/DataSource.h"
+#include "libvideoio/DataSource.h"
 
 namespace lsd_slam {
 
@@ -28,6 +28,7 @@ public:
     LOG(INFO) << "Camera reports fps: " << _fps;
   }
 
+  // Delete copy operators
   ZedSource( const ZedSource & ) = delete;
   ZedSource &operator=( const ZedSource & ) = delete;
 

@@ -3,8 +3,8 @@
 
 #include <zed/Camera.hpp>
 
-#include "libvideo_tools/Camera.h"
-#include "libvideo_tools/ImageSize.h"
+#include "libvideoio/Camera.h"
+#include "libvideoio/ImageSize.h"
 
 // As of API 1.0.0, the resolutions have changed slightly:
 // 2.2K	4416x1242	15fps	Wide

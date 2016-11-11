@@ -11,25 +11,26 @@ using namespace std;
 namespace fs = boost::filesystem;
 
 #include <zed/Camera.hpp>
-#include "libvideo_tools_zed/ZedUtils.h"
+#include "libvideoio_zed/ZedUtils.h"
+#include "libvideoio_zed/ZedSource.h"
+
 
 #include <tclap/CmdLine.h>
 
 #include <g3log/g3log.hpp>
 #include <g3log/logworker.hpp>
 
-#include "libvideo_tools/G3LogSinks.h"
+#include "libvideoio/G3LogSinks.h"
 
-#include "libvideo_tools/DataSource.h"
-#include "libvideo_tools/Undistorter.h"
+#include "libvideoio/DataSource.h"
+#include "libvideoio/Undistorter.h"
 
 #include "logger/LogWriter.h"
 
-#include "Display.h"
-#include "ImageOutput.h"
-#include "VideoOutput.h"
+#include "libvideoio/Display.h"
+#include "libvideoio/ImageOutput.h"
+#include "libvideoio/VideoOutput.h"
 
-#include "libvideo_tools_zed/ZedSource.h"
 
 using namespace lsd_slam;
 

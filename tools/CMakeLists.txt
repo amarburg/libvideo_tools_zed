@@ -9,7 +9,7 @@ include_directories(
 # )
 
 add_executable( ZedRecorder ZedRecorder.cpp)
-target_link_libraries( ZedRecorder libvideo_tools_zed )
+target_link_libraries( ZedRecorder videoio_zed )
 set_target_properties( ZedRecorder PROPERTIES COMPILE_FLAGS "-ggdb")
 
 
