@@ -95,8 +95,9 @@ int main( int argc, char** argv )
 		zed_recorder::Display display( guiSwitch.getValue() );
 		zed_recorder::ImageOutput imageOutput( imageOutputArg.getValue() );
 
+		const bool needDepth = ( svoOutputArg.isSet() ? false : true );
 		const sl::zed::ZEDResolution_mode zedResolution = parseResolution( resolutionArg.getValue() );
-		const sl::zed::MODE zedMode = (depthSwitch.getValue() ? sl::zed::MODE::PERFORMANCE : sl::zed::MODE::NONE);
+		const sl::zed::MODE zedMode = (needDepth ? sl::zed::MODE::PERFORMANCE : sl::zed::MODE::NONE);
 		const int whichGpu = -1;
 		const bool verboseInit = true;
 
@@ -132,7 +133,7 @@ int main( int argc, char** argv )
 			err = camera->enableRecording( svoOutputArg.getValue() );
 		}
 
-		dataSource = new ZedSource( camera, depthSwitch.getValue() );
+		dataSource = new ZedSource( camera, needDepth );
 
 		if( calibOutputArg.isSet() ) {
 				LOG(INFO) << "Saving calibration to \"" << calibOutputArg.getValue() << "\"";
@@ -144,7 +145,7 @@ int main( int argc, char** argv )
 
 		CHECK( fps >= 0 );
 
-		logger::LogWriter logWriter( compressLevel );
+		logger::LogWriter logWriter( ); //compressLevel );
 		logger::FieldHandle_t leftHandle = 0, rightHandle = 1, depthHandle = 2;
 		if( loggerOutputArg.isSet() ) {
 			sl::zed::resolution res( camera->getImageSize() );
