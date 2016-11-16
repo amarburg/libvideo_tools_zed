@@ -63,15 +63,9 @@ int main( int argc, char** argv )
 		TCLAP::ValueArg<std::string> resolutionArg("r","resolution","Input resolution: hd2k,hd1080,hd720,vga",false,"hd1080","", cmd);
 		TCLAP::ValueArg<float> fpsArg("f","fps","Input FPS, otherwise defaults to max FPS from input source",false,0.0,"", cmd);
 
-		TCLAP::ValueArg<std::string> svoInputArg("i","svo-input","Input SVO file",false,"","", cmd);
-
 		TCLAP::ValueArg<std::string> svoOutputArg("s","svo-output","Output SVO file",false,"","", cmd);
 
-		TCLAP::ValueArg<std::string> loggerOutputArg("l","log-output","Output Logger filename",false,"","", cmd);
 		TCLAP::ValueArg<std::string> calibOutputArg("","calib-output","Output calibration file (from stereolabs SDK)",false,"","Calib filename", cmd);
-
-		TCLAP::ValueArg<std::string> imageOutputArg("","image-output","Output to image folder",false,"","directory", cmd);
-		TCLAP::ValueArg<std::string> videoOutputArg("","video-output","Output to video",false,"","filename", cmd);
 
 		TCLAP::ValueArg<std::string> statisticsOutputArg("","statistics-output","",false,"","", cmd);
 
@@ -87,13 +81,12 @@ int main( int argc, char** argv )
 		cmd.parse(argc, argv );
 
 		// Output validation
-		if( !svoOutputArg.isSet() && !videoOutputArg.isSet() && !imageOutputArg.isSet() && !loggerOutputArg.isSet() && !guiSwitch.isSet() ) {
+		if( !svoOutputArg.isSet() && !guiSwitch.isSet() ) {
 			LOG(WARNING) << "No output options set.";
 			exit(-1);
 		}
 
 		zed_recorder::Display display( guiSwitch.getValue() );
-		zed_recorder::ImageOutput imageOutput( imageOutputArg.getValue() );
 
 		const bool needDepth = ( svoOutputArg.isSet() ? false : true );
 		const sl::zed::ZEDResolution_mode zedResolution = parseResolution( resolutionArg.getValue() );
@@ -104,16 +97,10 @@ int main( int argc, char** argv )
 		DataSource *dataSource = NULL;
 		sl::zed::Camera *camera = NULL;
 
-		LOG_IF( FATAL, calibOutputArg.isSet() && svoInputArg.isSet() ) << "Calibration data isn't stored in SVO input files.";
 		LOG_IF( FATAL, calibOutputArg.isSet() && svoOutputArg.isSet() ) << "Calibration data is only generated when using live video, not when recording to SVO.";
 
-		if( svoInputArg.isSet() )	{
-			LOG(INFO) << "Loading SVO file " << svoInputArg.getValue();
-			camera = new sl::zed::Camera( svoInputArg.getValue() );
-		} else  {
 			LOG(INFO) << "Using live Zed data";
 			camera = new sl::zed::Camera( zedResolution, fpsArg.getValue() );
-		}
 
 		sl::zed::ERRCODE err = sl::zed::LAST_ERRCODE;
 		sl::zed::InitParams initParams;
@@ -144,27 +131,6 @@ int main( int argc, char** argv )
 		float fps = dataSource->fps();
 
 		CHECK( fps >= 0 );
-
-		logger::LogWriter logWriter( ); //compressLevel );
-		logger::FieldHandle_t leftHandle = 0, rightHandle = 1, depthHandle = 2;
-		if( loggerOutputArg.isSet() ) {
-			sl::zed::resolution res( camera->getImageSize() );
-			cv::Size sz( res.width, res.height);
-
-			leftHandle = logWriter.registerField( "left", sz, logger::FIELD_BGRA_8C );
-			if( depthSwitch.getValue() ) depthHandle = logWriter.registerField( "depth", sz, logger::FIELD_DEPTH_32F );
-			if( rightSwitch.getValue() ) rightHandle = logWriter.registerField( "right", sz, logger::FIELD_BGRA_8C );
-
-			if( !logWriter.open( loggerOutputArg.getValue() ) ) {
-				LOG(FATAL) << "Unable to open file " << loggerOutputArg.getValue() << " for logging.";
-			}
-		}
-
-		imageOutput.registerField( leftHandle, "left" );
-		imageOutput.registerField( rightHandle, "right" );
-		imageOutput.registerField( depthHandle, "depth" );
-
-		zed_recorder::VideoOutput videoOutput( videoOutputArg.getValue(), fps > 0 ? fps : 30 );
 
 		int dt_us = (fps > 0) ? (1e6/fps) : 0;
 		const float sleepFudge = 1.0;
@@ -219,64 +185,16 @@ int main( int argc, char** argv )
 
 					if( count > startAtArg.getValue() ) {
 
-					cv::Mat left;
+					cv::Mat left, right, depth;
 					dataSource->getImage( 0, left );
+					dataSource->getImage( 1, right );
+					dataSource->getDepth( depth );
 
-					imageOutput.write( leftHandle, left );
-					videoOutput.write( left );
-
-					if( loggerOutputArg.isSet() ) {
-						logWriter.newFrame();
-						// This makes a copy of the data to send it to the compressor
-						logWriter.addField( leftHandle, left );
-					}
 
 					if( count % skip == 0 ) {
 						display.showLeft( left );
-					}
-
-					if( rightSwitch.getValue() ) {
-						cv::Mat right;
-						dataSource->getImage( 1, right );
-
-						imageOutput.write( rightHandle, right );
-
-						if( loggerOutputArg.isSet() ) {
-							logWriter.addField( rightHandle, right.data );
-						}
-
-						if( count % skip == 0 )
-							display.showRight( right );
-
-					}
-
-					if( depthSwitch.getValue() ) {
-						cv::Mat depth;
-						dataSource->getDepth( depth );
-
-						// Before normalization
-						if( loggerOutputArg.isSet() )
-							logWriter.addField( depthHandle, depth.data );
-
-						// Normalize depth
-						double mn = 1.0, mx = 1.0;
-						minMaxLoc( depth, &mn, &mx );
-						Mat depthInt( depth.cols, depth.rows, CV_8UC1 ), depthNorm( depth.cols, depth.rows, depth.type() );
-						depthNorm = depth * 255 / mx;
-						depthNorm.convertTo( depthInt, CV_8UC1 );
-
-						imageOutput.write( depthHandle, depthInt );
-
-						if( count % skip == 0 )
-							display.showDepth( depth );
-						}
-
-					if( loggerOutputArg.isSet() ) {
-						const bool doBlock = false; //( dt_us == 0 );
-						if( !logWriter.writeFrame( doBlock ) ) {
-							LOG(WARNING) << "Error while writing frame...";
-						}
-					}
+						display.showRight( right );
+						display.showDepth( depth );
 					}
 
 				} else {
@@ -311,13 +229,8 @@ int main( int argc, char** argv )
 		LOG(INFO) << "Recorded " << count << " frames in " <<   dur.count();
 		LOG(INFO) << " Average of " << (float)count / dur.count() << " FPS";
 
-		std::string fileName;
-		if( svoOutputArg.isSet() ) {
-			fileName = svoOutputArg.getValue();
-		} else if( loggerOutputArg.isSet() ) {
-			logWriter.close();
-			fileName = loggerOutputArg.getValue();
-		}
+		std::string fileName(svoOutputArg.getValue());
+
 
 		if( !fileName.empty() ) {
 			unsigned int fileSize = fs::file_size( fs::path(fileName));
