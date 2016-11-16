@@ -63,21 +63,15 @@ int main( int argc, char** argv )
 		TCLAP::ValueArg<std::string> resolutionArg("r","resolution","Input resolution: hd2k,hd1080,hd720,vga",false,"hd1080","", cmd);
 		TCLAP::ValueArg<float> fpsArg("f","fps","Input FPS, otherwise defaults to max FPS from input source",false,0.0,"", cmd);
 
-		TCLAP::ValueArg<std::string> logInputArg("","log-input","Input Logger file",false,"","", cmd);
 		TCLAP::ValueArg<std::string> svoInputArg("i","svo-input","Input SVO file",false,"","", cmd);
 
 		TCLAP::ValueArg<std::string> svoOutputArg("s","svo-output","Output SVO file",false,"","", cmd);
+
 		TCLAP::ValueArg<std::string> loggerOutputArg("l","log-output","Output Logger filename",false,"","", cmd);
 		TCLAP::ValueArg<std::string> calibOutputArg("","calib-output","Output calibration file (from stereolabs SDK)",false,"","Calib filename", cmd);
 
-		TCLAP::ValueArg<std::string> compressionArg("","compression","",false,"snappy","SVO filename", cmd);
-
-		TCLAP::ValueArg<std::string> imageOutputArg("","image-output","",false,"","SVO filename", cmd);
-		TCLAP::ValueArg<std::string> videoOutputArg("","video-output","",false,"","SVO filename", cmd);
-
-		TCLAP::ValueArg<int> skipArg("","skip","",false,1,"", cmd);
-		TCLAP::ValueArg<int> startAtArg("","start-at","",false,0,"", cmd);
-
+		TCLAP::ValueArg<std::string> imageOutputArg("","image-output","Output to image folder",false,"","directory", cmd);
+		TCLAP::ValueArg<std::string> videoOutputArg("","video-output","Output to video",false,"","filename", cmd);
 
 		TCLAP::ValueArg<std::string> statisticsOutputArg("","statistics-output","",false,"","", cmd);
 
@@ -85,29 +79,12 @@ int main( int argc, char** argv )
 
 		TCLAP::SwitchArg disableSelfCalibSwitch("","disable-self-calib","", cmd, false);
 
-		TCLAP::SwitchArg depthSwitch("","depth","", cmd, false);
-		TCLAP::SwitchArg rightSwitch("","right","", cmd, false);
-
 		TCLAP::SwitchArg guiSwitch("","display","", cmd, false);
 
 
 		TCLAP::ValueArg<int> durationArg("","duration","Duration",false,0,"seconds", cmd);
 
 		cmd.parse(argc, argv );
-
-		int compressLevel = logger::LogWriter::DefaultCompressLevel;
-		if( compressionArg.isSet() ) {
-			if( compressionArg.getValue() == "snappy" )
-				compressLevel = logger::LogWriter::SnappyCompressLevel;
-			else {
-				try {
-					compressLevel = std::stoi(compressionArg.getValue() );
-				} catch ( std::invalid_argument &e ) {
-					throw TCLAP::ArgException("Don't understand compression level.");
-				}
-
-			}
-		}
 
 		// Output validation
 		if( !svoOutputArg.isSet() && !videoOutputArg.isSet() && !imageOutputArg.isSet() && !loggerOutputArg.isSet() && !guiSwitch.isSet() ) {
@@ -118,63 +95,48 @@ int main( int argc, char** argv )
 		zed_recorder::Display display( guiSwitch.getValue() );
 		zed_recorder::ImageOutput imageOutput( imageOutputArg.getValue() );
 
-
 		const sl::zed::ZEDResolution_mode zedResolution = parseResolution( resolutionArg.getValue() );
-		const sl::zed::MODE zedMode = (depthSwitch.getValue() ? sl::zed::MODE::QUALITY : sl::zed::MODE::NONE);
+		const sl::zed::MODE zedMode = (depthSwitch.getValue() ? sl::zed::MODE::PERFORMANCE : sl::zed::MODE::NONE);
 		const int whichGpu = -1;
 		const bool verboseInit = true;
 
 		DataSource *dataSource = NULL;
-
 		sl::zed::Camera *camera = NULL;
 
-		if( logInputArg.isSet() ) {
-			LOG(INFO) << "Loading logger data from " << logInputArg.getValue();
-			dataSource = new LoggerSource( logInputArg.getValue() );
+		LOG_IF( FATAL, calibOutputArg.isSet() && svoInputArg.isSet() ) << "Calibration data isn't stored in SVO input files.";
+		LOG_IF( FATAL, calibOutputArg.isSet() && svoOutputArg.isSet() ) << "Calibration data is only generated when using live video, not when recording to SVO.";
 
-			LOG_IF(FATAL, depthSwitch.getValue() && !dataSource->hasDepth() ) << "Depth requested but log file doesn't have depth data.";
-			LOG_IF(FATAL, rightSwitch.getValue() && dataSource->numImages() < 2 ) << "Depth requested but log file doesn't have depth data.";
+		if( svoInputArg.isSet() )	{
+			LOG(INFO) << "Loading SVO file " << svoInputArg.getValue();
+			camera = new sl::zed::Camera( svoInputArg.getValue() );
+		} else  {
+			LOG(INFO) << "Using live Zed data";
+			camera = new sl::zed::Camera( zedResolution, fpsArg.getValue() );
+		}
 
-			if( calibOutputArg.isSet() )
-				LOG(WARNING) << "Can't create calibration file from a log file.";
-
-		} else {
-
-			LOG_IF( FATAL, calibOutputArg.isSet() && svoInputArg.isSet() ) << "Calibration data isn't stored in SVO input files.";
-			LOG_IF( FATAL, calibOutputArg.isSet() && svoOutputArg.isSet() ) << "Calibration data is only generated when using live video, not when recording to SVO.";
-
-			if( svoInputArg.isSet() )	{
-				LOG(INFO) << "Loading SVO file " << svoInputArg.getValue();
-				camera = new sl::zed::Camera( svoInputArg.getValue() );
-			} else  {
-				LOG(INFO) << "Using live Zed data";
-				camera = new sl::zed::Camera( zedResolution, fpsArg.getValue() );
-			}
-
-			sl::zed::ERRCODE err = sl::zed::LAST_ERRCODE;
-			sl::zed::InitParams initParams;
-			initParams.mode = zedMode;
-			initParams.verbose = verboseInit;
-			initParams.disableSelfCalib = disableSelfCalibSwitch.getValue();
-			err = camera->init( initParams );
+		sl::zed::ERRCODE err = sl::zed::LAST_ERRCODE;
+		sl::zed::InitParams initParams;
+		initParams.mode = zedMode;
+		initParams.verbose = verboseInit;
+		initParams.disableSelfCalib = disableSelfCalibSwitch.getValue();
+		err = camera->init( initParams );
 
 
-			if (err != sl::zed::SUCCESS) {
-				LOG(WARNING) << "Unable to init the Zed camera (" << err << "): " << errcode2str(err);
-				delete camera;
-				exit(-1);
-			}
+		if (err != sl::zed::SUCCESS) {
+			LOG(WARNING) << "Unable to init the Zed camera (" << err << "): " << errcode2str(err);
+			delete camera;
+			exit(-1);
+		}
 
-			if( svoOutputArg.isSet() ) {
-				err = camera->enableRecording( svoOutputArg.getValue() );
-			}
+		if( svoOutputArg.isSet() ) {
+			err = camera->enableRecording( svoOutputArg.getValue() );
+		}
 
-			dataSource = new ZedSource( camera, depthSwitch.getValue() );
+		dataSource = new ZedSource( camera, depthSwitch.getValue() );
 
-			if( calibOutputArg.isSet() ) {
-					LOG(INFO) << "Saving calibration to \"" << calibOutputArg.getValue() << "\"";
-					calibrationFromZed( camera, calibOutputArg.getValue() );
-			}
+		if( calibOutputArg.isSet() ) {
+				LOG(INFO) << "Saving calibration to \"" << calibOutputArg.getValue() << "\"";
+				calibrationFromZed( camera, calibOutputArg.getValue() );
 		}
 
 		int numFrames = dataSource->numFrames();
@@ -231,7 +193,7 @@ int main( int argc, char** argv )
 
 			if( svoOutputArg.isSet() ) {
 
-				if( camera->grab() ) {
+				if( dataSource->grab() ) {
 					LOG(WARNING) << "Error occured while recording from camera";
 				}
 

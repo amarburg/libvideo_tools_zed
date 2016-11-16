@@ -32,11 +32,14 @@ public:
   ZedSource( const ZedSource & ) = delete;
   ZedSource &operator=( const ZedSource & ) = delete;
 
-  virtual int numFrames( void ) const { return _cam->getSVONumberOfFrames(); };
+  virtual int numFrames( void ) const
+  {
+    return _cam->getSVONumberOfFrames();
+  };
 
   virtual bool grab( void )
   {
-    if( _cam->grab( _mode, _computeDepth, _computeDepth ) ) {
+    if( _cam->grab( _mode, _computeDepth, _computeDepth, false ) ) {
       LOG( WARNING ) << "Error from Zed::grab";
       return false;
     }
