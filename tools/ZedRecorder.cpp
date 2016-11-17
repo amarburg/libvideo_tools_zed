@@ -158,8 +158,6 @@ int main( int argc, char** argv )
 
 			if( (duration > 0) && (loopStart > end) ) { keepGoing = false;  break; }
 
-			if( svoOutputArg.isSet() ) {
-
 				if( !dataSource->grab() ) {
 					LOG(WARNING) << "Error occured while recording from camera";
 				}
@@ -176,28 +174,6 @@ int main( int argc, char** argv )
 				// 	display.showRawStereoYUV( rawCopy );
 				// }
 
-
-
-
-			} else {
-
-				if( dataSource->grab() ) {
-
-					cv::Mat left, right, depth;
-					dataSource->getImage( 0, left );
-					dataSource->getImage( 1, right );
-					dataSource->getDepth( depth );
-
-
-					if( count % skip == 0 ) {
-						display.showLeft( left );
-						display.showRight( right );
-						display.showDepth( depth );
-					}
-
-				} else {
-					LOG(WARNING) << "Problem grabbing from camera.";
-				}
 			}
 
 			if( count % skip == 0 )

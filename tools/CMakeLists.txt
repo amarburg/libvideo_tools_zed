@@ -10,11 +10,8 @@ include_directories(
 
 add_executable( ZedRecorder ZedRecorder.cpp)
 target_link_libraries( ZedRecorder videoio_zed )
-set_target_properties( ZedRecorder PROPERTIES COMPILE_FLAGS "-ggdb")
+#set_target_properties( ZedRecorder PROPERTIES COMPILE_FLAGS "-ggdb")
 
-
-# # build image node
-# add_executable(LSD LSD.cpp
-#   LSD/GuiThread.cpp
-#   LSD/InputThread.cpp)
-# target_link_libraries( LSD lsdslam )
+# add_executable( ZedConverter ZedConverter.cpp)
+# target_link_libraries( ZedConverter videoio_zed )
+#set_target_properties( ZedConverter PROPERTIES COMPILE_FLAGS "-ggdb")

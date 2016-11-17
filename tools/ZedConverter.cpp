@@ -63,13 +63,9 @@ int main( int argc, char** argv )
 		TCLAP::ValueArg<std::string> resolutionArg("r","resolution","Input resolution: hd2k,hd1080,hd720,vga",false,"hd1080","", cmd);
 		TCLAP::ValueArg<float> fpsArg("f","fps","Input FPS, otherwise defaults to max FPS from input source",false,0.0,"", cmd);
 
-		TCLAP::ValueArg<std::string> logInputArg("","log-input","Input Logger file",false,"","", cmd);
-		TCLAP::ValueArg<std::string> svoInputArg("i","svo-input","Input SVO file",false,"","", cmd);
+		TCLAP::ValueArg<std::string> svoInputArg("i","svo-input","Input SVO file",true,"","", cmd);
 
-		TCLAP::ValueArg<std::string> svoOutputArg("s","svo-output","Output SVO file",false,"","", cmd);
 		TCLAP::ValueArg<std::string> loggerOutputArg("l","log-output","Output Logger filename",false,"","", cmd);
-		TCLAP::ValueArg<std::string> calibOutputArg("","calib-output","Output calibration file (from stereolabs SDK)",false,"","Calib filename", cmd);
-
 		TCLAP::ValueArg<std::string> compressionArg("","compression","",false,"snappy","SVO filename", cmd);
 
 		TCLAP::ValueArg<std::string> imageOutputArg("","image-output","",false,"","SVO filename", cmd);
@@ -98,7 +94,7 @@ int main( int argc, char** argv )
 		int compressLevel = logger::LogWriter::DefaultCompressLevel;
 		if( compressionArg.isSet() ) {
 			if( compressionArg.getValue() == "snappy" )
-				compressLevel = logger::LogWriter::SnappyCompressLevel;
+			compressLevel = logger::LogWriter::SnappyCompressLevel;
 			else {
 				try {
 					compressLevel = std::stoi(compressionArg.getValue() );
@@ -110,7 +106,7 @@ int main( int argc, char** argv )
 		}
 
 		// Output validation
-		if( !svoOutputArg.isSet() && !videoOutputArg.isSet() && !imageOutputArg.isSet() && !loggerOutputArg.isSet() && !guiSwitch.isSet() ) {
+		if( !videoOutputArg.isSet() && !imageOutputArg.isSet() && !loggerOutputArg.isSet() && !guiSwitch.isSet() ) {
 			LOG(WARNING) << "No output options set.";
 			exit(-1);
 		}
@@ -118,63 +114,35 @@ int main( int argc, char** argv )
 		zed_recorder::Display display( guiSwitch.getValue() );
 		zed_recorder::ImageOutput imageOutput( imageOutputArg.getValue() );
 
-
-		const sl::zed::ZEDResolution_mode zedResolution = parseResolution( resolutionArg.getValue() );
-		const sl::zed::MODE zedMode = (depthSwitch.getValue() ? sl::zed::MODE::QUALITY : sl::zed::MODE::NONE);
+		//		const sl::zed::ZEDResolution_mode zedResolution = parseResolution( resolutionArg.getValue() );
 		const int whichGpu = -1;
-		const bool verboseInit = true;
 
 		DataSource *dataSource = NULL;
 
-		sl::zed::Camera *camera = NULL;
+		LOG(INFO) << "Loading SVO file " << svoInputArg.getValue();
+		sl::zed::Camera *camera = new sl::zed::Camera( svoInputArg.getValue() );
 
-		if( logInputArg.isSet() ) {
-			LOG(INFO) << "Loading logger data from " << logInputArg.getValue();
-			dataSource = new LoggerSource( logInputArg.getValue() );
-
-			LOG_IF(FATAL, depthSwitch.getValue() && !dataSource->hasDepth() ) << "Depth requested but log file doesn't have depth data.";
-			LOG_IF(FATAL, rightSwitch.getValue() && dataSource->numImages() < 2 ) << "Depth requested but log file doesn't have depth data.";
-
-			if( calibOutputArg.isSet() )
-				LOG(WARNING) << "Can't create calibration file from a log file.";
-
-		} else {
-
-			LOG_IF( FATAL, calibOutputArg.isSet() && svoInputArg.isSet() ) << "Calibration data isn't stored in SVO input files.";
-			LOG_IF( FATAL, calibOutputArg.isSet() && svoOutputArg.isSet() ) << "Calibration data is only generated when using live video, not when recording to SVO.";
-
-			if( svoInputArg.isSet() )	{
-				LOG(INFO) << "Loading SVO file " << svoInputArg.getValue();
-				camera = new sl::zed::Camera( svoInputArg.getValue() );
-			} else  {
-				LOG(INFO) << "Using live Zed data";
-				camera = new sl::zed::Camera( zedResolution, fpsArg.getValue() );
-			}
-
-			sl::zed::ERRCODE err = sl::zed::LAST_ERRCODE;
-			sl::zed::InitParams initParams;
-			initParams.mode = zedMode;
-			initParams.verbose = verboseInit;
-			initParams.disableSelfCalib = disableSelfCalibSwitch.getValue();
-			err = camera->init( initParams );
+		const sl::zed::MODE zedMode = (depthSwitch.getValue() ? sl::zed::MODE::QUALITY : sl::zed::MODE::NONE);
+		const bool verboseInit = true;
+		sl::zed::ERRCODE err = sl::zed::LAST_ERRCODE;
+		sl::zed::InitParams initParams;
+		initParams.mode = zedMode;
+		initParams.verbose = verboseInit;
+		initParams.disableSelfCalib = disableSelfCalibSwitch.getValue();
+		err = camera->init( initParams );
 
 
-			if (err != sl::zed::SUCCESS) {
-				LOG(WARNING) << "Unable to init the Zed camera (" << err << "): " << errcode2str(err);
-				delete camera;
-				exit(-1);
-			}
+		if (err != sl::zed::SUCCESS) {
+			LOG(WARNING) << "Unable to init the Zed camera (" << err << "): " << errcode2str(err);
+			delete camera;
+			exit(-1);
+		}
 
-			if( svoOutputArg.isSet() ) {
-				err = camera->enableRecording( svoOutputArg.getValue() );
-			}
+		dataSource = new ZedSource( camera, depthSwitch.getValue() );
 
-			dataSource = new ZedSource( camera, depthSwitch.getValue() );
-
-			if( calibOutputArg.isSet() ) {
-					LOG(INFO) << "Saving calibration to \"" << calibOutputArg.getValue() << "\"";
-					calibrationFromZed( camera, calibOutputArg.getValue() );
-			}
+		if( calibOutputArg.isSet() ) {
+			LOG(INFO) << "Saving calibration to \"" << calibOutputArg.getValue() << "\"";
+			calibrationFromZed( camera, calibOutputArg.getValue() );
 		}
 
 		int numFrames = dataSource->numFrames();
@@ -214,9 +182,9 @@ int main( int argc, char** argv )
 		std::chrono::steady_clock::time_point end( start + std::chrono::seconds( duration ) );
 
 		if( duration > 0 )
-			LOG(INFO) << "Will log for " << duration << " seconds or press CTRL-C to stop.";
+		LOG(INFO) << "Will log for " << duration << " seconds or press CTRL-C to stop.";
 		else
-			LOG(INFO) << "Logging now, press CTRL-C to stop.";
+		LOG(INFO) << "Logging now, press CTRL-C to stop.";
 
 		// Wait for the auto exposure and white balance
 		std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -229,32 +197,9 @@ int main( int argc, char** argv )
 
 			if( (duration > 0) && (loopStart > end) ) { keepGoing = false;  break; }
 
-			if( svoOutputArg.isSet() ) {
+			if( dataSource->grab() ) {
 
-				if( camera->grab() ) {
-					LOG(WARNING) << "Error occured while recording from camera";
-				}
-
-				camera->record();
-
-				// } else if( count % skip == 0 ) {
-				// 	// According to the docs, this:
-				// 	//		Get[s] the current side by side YUV 4:2:2 frame, CPU buffer.
-				// 	sl::zed::Mat slRawImage( camera->getCurrentRawRecordedFrame() );
-				// 	// Make a copy before enqueueing
-				// 	Mat rawCopy;
-				// 	sl::zed::slMat2cvMat( slRawImage ).reshape( 2, 0 ).copyTo( rawCopy );
-				// 	display.showRawStereoYUV( rawCopy );
-				// }
-
-
-
-
-			} else {
-
-				if( dataSource->grab() ) {
-
-					if( count > startAtArg.getValue() ) {
+				if( count > startAtArg.getValue() ) {
 
 					cv::Mat left;
 					dataSource->getImage( 0, left );
@@ -283,7 +228,7 @@ int main( int argc, char** argv )
 						}
 
 						if( count % skip == 0 )
-							display.showRight( right );
+						display.showRight( right );
 
 					}
 
@@ -293,7 +238,7 @@ int main( int argc, char** argv )
 
 						// Before normalization
 						if( loggerOutputArg.isSet() )
-							logWriter.addField( depthHandle, depth.data );
+						logWriter.addField( depthHandle, depth.data );
 
 						// Normalize depth
 						double mn = 1.0, mx = 1.0;
@@ -305,8 +250,8 @@ int main( int argc, char** argv )
 						imageOutput.write( depthHandle, depthInt );
 
 						if( count % skip == 0 )
-							display.showDepth( depth );
-						}
+						display.showDepth( depth );
+					}
 
 					if( loggerOutputArg.isSet() ) {
 						const bool doBlock = false; //( dt_us == 0 );
@@ -314,15 +259,14 @@ int main( int argc, char** argv )
 							LOG(WARNING) << "Error while writing frame...";
 						}
 					}
-					}
-
-				} else {
-					LOG(WARNING) << "Problem grabbing from camera.";
 				}
+
+			} else {
+				LOG(WARNING) << "Problem grabbing from camera.";
 			}
 
 			if( count % skip == 0 )
-				display.waitKey();
+			display.waitKey();
 
 
 			if( dt_us > 0 ) {
@@ -367,7 +311,7 @@ int main( int argc, char** argv )
 				ofstream out( statisticsOutputArg.getValue(), ios_base::out | ios_base::ate | ios_base::app );
 				if( out.is_open() ) {
 					out << resolutionToString( zedResolution ) << "," << fps << "," << (guiSwitch.isSet() ? "display" : "") << "," << count << "," << dur.count() << ","
-							<< fileSizeMB << endl;
+					<< fileSizeMB << endl;
 				}
 			}
 		}

@@ -39,7 +39,8 @@ public:
 
   virtual bool grab( void )
   {
-    if( _cam->grab( _mode, _computeDepth, _computeDepth, false ) ) {
+    if( _cam->grab( sl::zed::STANDARD, false, false, false ) ) {
+//    if( _cam->grab( _mode, _computeDepth, _computeDepth, false ) ) {
       LOG( WARNING ) << "Error from Zed::grab";
       return false;
     }
