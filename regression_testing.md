@@ -29,3 +29,5 @@ hd1080 = 6.75292   FPS
 noting that these match the performance of the zed viewer software (~7 FPS in HD1080, 15-20GPS in HD720)
 
 Added "count" message in main loop (29b5bab).  No regression.
+
+Put duration checking back in (7ce2b7a).  No apparent regression.

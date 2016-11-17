@@ -97,6 +97,8 @@ int main( int argc, char** argv )
 //		exit(-1);
 //	}
 
+const bool doDisplay = guiSwitch.getValue();
+
 		const bool needDepth = false; //( svoOutputArg.isSet() ? false : true );
 		const sl::zed::ZEDResolution_mode zedResolution = parseResolution( resolutionArg.getValue() );
 		const int whichGpu = -1;
@@ -156,7 +158,7 @@ int main( int argc, char** argv )
 		std::chrono::steady_clock::time_point start( std::chrono::steady_clock::now() );
 		std::chrono::steady_clock::time_point end( start + std::chrono::seconds( duration ) );
 
-		int count = 0, miss = 0, skip = 10;
+		int count = 0, miss = 0, displayed = 0, skip = 10;
 		while( keepGoing ) {
 
 			if( count > 0 && (count % 100)==0 ) LOG(INFO) << count << " frames";
@@ -172,15 +174,19 @@ int main( int argc, char** argv )
 
 				camera->record();
 
-				// } else if( count % skip == 0 ) {
-				// 	// According to the docs, this:
-				// 	//		Get[s] the current side by side YUV 4:2:2 frame, CPU buffer.
-				// 	sl::zed::Mat slRawImage( camera->getCurrentRawRecordedFrame() );
-				// 	// Make a copy before enqueueing
-				// 	Mat rawCopy;
-				// 	sl::zed::slMat2cvMat( slRawImage ).reshape( 2, 0 ).copyTo( rawCopy );
+				if( doDisplay && (count % skip == 0) ) {
+					// According to the docs, this:
+					//		Get[s] the current side by side YUV 4:2:2 frame, CPU buffer.
+					sl::zed::Mat slRawImage( camera->getCurrentRawRecordedFrame() );
+					// Make a copy before enqueueing
+
+					Mat rawCopy;
+					sl::zed::slMat2cvMat( slRawImage ).reshape( 2, 0 ).copyTo( rawCopy );
+
 				// 	display.showRawStereoYUV( rawCopy );
-				// }
+
+					++displayed;
+				}
 			++count;
 			std::this_thread::sleep_for(std::chrono::microseconds(1));
 
@@ -214,6 +220,7 @@ int main( int argc, char** argv )
 		LOG(INFO) << "Recorded " << count << " frames in " <<   dur.count();
 		LOG(INFO) << " Average of " << (float)count / dur.count() << " FPS";
 		LOG(INFO) << "   " << miss << " / " << (miss+count) << " misses";
+		LOG_IF( INFO, displayed > 0 ) << "   Displayed " << displayed << " frames";
 
 		std::string fileName(svoOutputArg.getValue());
 
