@@ -52,6 +52,7 @@ find_package(OpenCV ${OPENCV_VERSION} COMPONENTS ${OPENCV_COMPONENTS} REQUIRED)
 ## Set global include paths
 set( LIBVIDEO_TOOLS_INCLUDE_DIRS
   ${CMAKE_SOURCE_DIR}/include
+	${CMAKE_SOURCE_DIR}/../libvideoio/include/
 	${CUDA_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 	${EIGEN3_INCLUDE_DIR}

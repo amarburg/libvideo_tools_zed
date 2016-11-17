@@ -21,6 +21,8 @@ namespace fs = boost::filesystem;
 #include <tclap/CmdLine.h>
 
 #include <g3log/g3log.hpp>
+#include <g3log/logworker.hpp>
+#include "libvideoio/G3LogSinks.h"
 
 //#include "libvideoio/DataSource.h"
 //#include "libvideoio/Undistorter.h"
@@ -48,6 +50,11 @@ using cv::Mat;
 
 int main( int argc, char** argv )
 {
+	auto worker = g3::LogWorker::createLogWorker();
+	auto stderrHandle = worker->addSink(std::unique_ptr<ColorStderrSink>( new ColorStderrSink ),
+	&ColorStderrSink::ReceiveLogMessage);
+	g3::initializeLogging(worker.get());
+
 	signal( SIGINT, signal_handler );
 
 	//try {
