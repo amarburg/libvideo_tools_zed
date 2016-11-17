@@ -11,11 +11,12 @@ include_directories(
 add_executable( ZedRecorder ZedRecorder.cpp)
 target_link_libraries( ZedRecorder
   ${ZED_CUDA_LIBRARIES}
-  ${Boost_LIBRARIES}   )
+  ${Boost_LIBRARIES} 
+  ${CONAN_LIBS} )
 
 add_executable( Recorder main.cpp )
 target_link_libraries( Recorder
-  ${ZED_CUDA_LIBRARIES} 
+  ${ZED_CUDA_LIBRARIES}
   ${Boost_LIBRARIES}   )
 
 #set_target_properties( ZedRecorder PROPERTIES COMPILE_FLAGS "-ggdb")

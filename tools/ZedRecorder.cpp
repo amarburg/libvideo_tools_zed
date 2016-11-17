@@ -55,7 +55,7 @@ int main( int argc, char** argv )
 		TCLAP::ValueArg<std::string> resolutionArg("r","resolution","Input resolution: hd2k,hd1080,hd720,vga",false,"hd1080","", cmd);
 		TCLAP::ValueArg<float> fpsArg("f","fps","Input FPS, otherwise defaults to max FPS from input source",false,0.0,"", cmd);
 
-		TCLAP::ValueArg<std::string> svoOutputArg("s","svo-output","Output SVO file",true,"","", cmd);
+		TCLAP::ValueArg<std::string> svoOutputArg("s","svo-output","Output SVO file",false,"","", cmd);
 
 		TCLAP::ValueArg<std::string> calibOutputArg("","calib-output","Output calibration file (from stereolabs SDK)",false,"","Calib filename", cmd);
 
@@ -75,10 +75,10 @@ int main( int argc, char** argv )
 		cmd.parse(argc, argv );
 
 		// Output validation
-		if( !svoOutputArg.isSet() && !guiSwitch.isSet() ) {
-			std::cout << "No output options set." << std::endl;
-			exit(-1);
-		}
+		// if( !svoOutputArg.isSet() && !guiSwitch.isSet() ) {
+		// 	std::cout << "No output options set." << std::endl;
+		// 	exit(-1);
+		// }
 
 		//zed_recorder::Display display( guiSwitch.getValue() );
 //} catch (TCLAP::ArgException &e)  // catch any exceptions
@@ -113,11 +113,13 @@ int main( int argc, char** argv )
 			exit(-1);
 		}
 
+		if( svoOutputArg.isSet() ) {
 			err = camera->enableRecording( svoOutputArg.getValue() );
 
 			if (err != sl::zed::SUCCESS) {
 				std::cout << "Error while setting up logging (" << err << "): " << errcode2str(err) << std::endl;
 			}
+		}
 
 		//dataSource = new ZedSource( camera, needDepth );
 
@@ -128,19 +130,20 @@ int main( int argc, char** argv )
 
 		int numFrames = 0; //dataSource->numFrames();
 
-		std::chrono::steady_clock::time_point start( std::chrono::steady_clock::now() );
+		// Wait for the auto exposure and white balance
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+
 		int duration = durationArg.getValue();
-		std::chrono::steady_clock::time_point end( start + std::chrono::seconds( duration ) );
 
 		if( duration > 0 )
 			std::cout << "Will log for " << duration << " seconds or press CTRL-C to stop." << std::endl;
 		else
 			std::cout<< "Logging now, press CTRL-C to stop." << std::endl;
 
-		// Wait for the auto exposure and white balance
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+		std::chrono::steady_clock::time_point start( std::chrono::steady_clock::now() );
+		std::chrono::steady_clock::time_point end( start + std::chrono::seconds( duration ) );
 
-		int count = 0, skip = 10;
+		int count = 0, miss = 0, skip = 10;
 		while( keepGoing ) {
 
 			//if( count > 0 && (count % 100)==0 ) LOG(INFO) << count << " frames";
@@ -170,6 +173,7 @@ int main( int argc, char** argv )
 			std::this_thread::sleep_for(std::chrono::microseconds(1));
 
 		} else {
+			++miss;
 			std::this_thread::sleep_for(std::chrono::microseconds(100));
 		}
 
@@ -189,21 +193,21 @@ int main( int argc, char** argv )
 		//	keepGoing = false;
 		//}
 
-		if( numFramesArg.isSet() && count >= numFramesArg.getValue() ) {
-			keepGoing = false;
-		}
+		if( numFramesArg.isSet() && count >= numFramesArg.getValue() ) keepGoing = false;
+
 }
 
+std::chrono::duration<float> dur( std::chrono::steady_clock::now()  - start );
 
 		std::cout<< "Cleaning up..." << std::endl;
-		camera->stopRecording();
+		if( camera && svoOutputArg.isSet() ) camera->stopRecording();
 		if( camera ) delete camera;
 
 
-		std::chrono::duration<float> dur( std::chrono::steady_clock::now()  - start );
 
-		std::cout<< "Recorded " << count << " frames in " <<   dur.count();
-		std::cout<< " Average of " << (float)count / dur.count() << " FPS";
+		std::cout<< "Recorded " << count << " frames in " <<   dur.count() << std::endl;
+		std::cout<< " Average of " << (float)count / dur.count() << " FPS" << std::endl;
+		std::cout << "   " << miss << " / " << (miss+count) << " misses";
 
 		std::string fileName(svoOutputArg.getValue());
 
