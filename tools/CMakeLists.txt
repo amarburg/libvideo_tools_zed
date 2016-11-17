@@ -9,7 +9,12 @@ include_directories(
 # )
 
 add_executable( ZedRecorder ZedRecorder.cpp)
-target_link_libraries( ZedRecorder videoio_zed )
+
+add_executable( Recorder main.cpp )
+target_link_libraries( Recorder
+  ${ZED_CUDA_LIBRARIES} 
+  ${Boost_LIBRARIES}   )
+
 #set_target_properties( ZedRecorder PROPERTIES COMPILE_FLAGS "-ggdb")
 
 # add_executable( ZedConverter ZedConverter.cpp)

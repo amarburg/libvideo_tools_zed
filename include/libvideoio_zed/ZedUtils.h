@@ -33,7 +33,7 @@ bool calibrationFromZed( sl::zed::Camera *camera, const std::string &filename )
 {
 	std::ofstream out( filename );
 	if( !out.is_open() ) {
-		LOG(WARNING) << "Unable to write to calibration file \"" << filename << "\"";
+//		LOG(WARNING) << "Unable to write to calibration file \"" << filename << "\"";
 		return false;
 	}
 
@@ -63,7 +63,8 @@ inline sl::zed::ZEDResolution_mode parseResolution( const std::string &arg )
 	else if( arg == "vga" )
 		return sl::zed::VGA;
 	else
-		LOG(FATAL) << "Couldn't parse resolution \"" << arg << "\"";
+		;
+//		LOG(FATAL) << "Couldn't parse resolution \"" << arg << "\"";
 }
 
 inline std::string resolutionToString( sl::zed::ZEDResolution_mode arg )

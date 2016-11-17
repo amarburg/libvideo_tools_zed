@@ -32,7 +32,7 @@ if( ${ARCHITECTURE} STREQUAL "aarch64" )
 	set( OPENCV_VERSION 2.4 )
 
 	## For compilation on Jetson TX1
-	set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8-a") # -DENABLE_NEON" )
+#	set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8-a") # -DENABLE_NEON" )
 
 elseif( ${ARCHITECTURE} STREQUAL "x86_64" )
 	  # -DENABLE_SSE enables Jakob's original SSE optimizations in his code,
@@ -43,7 +43,7 @@ endif()
 find_package( CUDA REQUIRED ${CUDA_VERSION} )
 
 ## C++ flags applied to all builds
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x" ) #-std=c++11")
 
 ## Configure OpenCV ##
 
@@ -60,7 +60,7 @@ set( LIBVIDEO_TOOLS_INCLUDE_DIRS
 
 include_directories( ${LIBVIDEO_TOOLS_INCLUDE_DIRS} )
 
-add_subdirectory("lib/")
+#add_subdirectory("lib/")
 add_subdirectory("tools/")
 
 option( BUILD_UNIT_TESTS "Build unit tests" ON )
