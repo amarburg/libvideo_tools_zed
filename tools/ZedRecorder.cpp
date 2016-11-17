@@ -90,9 +90,7 @@ int main( int argc, char** argv )
 
 		const bool needDepth = false; //( svoOutputArg.isSet() ? false : true );
 		const sl::zed::ZEDResolution_mode zedResolution = parseResolution( resolutionArg.getValue() );
-		const sl::zed::MODE zedMode = (needDepth ? sl::zed::MODE::PERFORMANCE : sl::zed::MODE::NONE);
 		const int whichGpu = -1;
-		const bool verboseInit = true;
 
 		DataSource *dataSource = NULL;
 		sl::zed::Camera *camera = NULL;
@@ -100,15 +98,16 @@ int main( int argc, char** argv )
 		LOG_IF( FATAL, calibOutputArg.isSet() && svoOutputArg.isSet() ) << "Calibration data is only generated when using live video, not when recording to SVO.";
 
 			LOG(INFO) << "Using live Zed data";
-			camera = new sl::zed::Camera( zedResolution, fpsArg.getValue() );
+			camera = new sl::zed::Camera( zedResolution ); //, 60.0 ); //fpsArg.getValue() );
 
 		sl::zed::ERRCODE err = sl::zed::LAST_ERRCODE;
 		sl::zed::InitParams initParams;
+		const sl::zed::MODE zedMode = sl::zed::MODE::NONE;  //(needDepth ? sl::zed::MODE::PERFORMANCE : sl::zed::MODE::NONE);
 		initParams.mode = zedMode;
+		const bool verboseInit = true;
 		initParams.verbose = verboseInit;
-		initParams.disableSelfCalib = disableSelfCalibSwitch.getValue();
+		//initParams.disableSelfCalib = true; // disableSelfCalibSwitch.getValue();
 		err = camera->init( initParams );
-
 
 		if (err != sl::zed::SUCCESS) {
 			LOG(WARNING) << "Unable to init the Zed camera (" << err << "): " << errcode2str(err);
@@ -120,21 +119,22 @@ int main( int argc, char** argv )
 			err = camera->enableRecording( svoOutputArg.getValue() );
 		}
 
-		dataSource = new ZedSource( camera, needDepth );
+		//dataSource = new ZedSource( camera, needDepth );
 
-		if( calibOutputArg.isSet() ) {
-				LOG(INFO) << "Saving calibration to \"" << calibOutputArg.getValue() << "\"";
-				calibrationFromZed( camera, calibOutputArg.getValue() );
-		}
+		//if( calibOutputArg.isSet() ) {
+		//		LOG(INFO) << "Saving calibration to \"" << calibOutputArg.getValue() << "\"";
+		//		calibrationFromZed( camera, calibOutputArg.getValue() );
+		//}
 
-		int numFrames = dataSource->numFrames();
-		float fps = dataSource->fps();
+		int numFrames = 0; //dataSource->numFrames();
+		float fps = 60.0; //= dataSource->fps();
 
 		CHECK( fps >= 0 );
 
 		int dt_us = (fps > 0) ? (1e6/fps) : 0;
-		const float sleepFudge = 0.9;
+		const float sleepFudge = 0.1;
 		dt_us *= sleepFudge;
+dt_us = 0;
 
 		LOG(INFO) << "Input is at " << resolutionToString( zedResolution ) << " at nominal " << fps << "FPS";
 
@@ -158,9 +158,11 @@ int main( int argc, char** argv )
 
 			if( (duration > 0) && (loopStart > end) ) { keepGoing = false;  break; }
 
-				if( !dataSource->grab() ) {
-					LOG(WARNING) << "Error occured while recording from camera";
-				}
+//				if( !dataSource->grab() ) {
+//					LOG(WARNING) << "Error occured while recording from camera";
+//				}
+
+				if( !camera->grab( sl::zed::STANDARD, false, false, false ) ) {
 
 				camera->record();
 
@@ -173,21 +175,24 @@ int main( int argc, char** argv )
 				// 	sl::zed::slMat2cvMat( slRawImage ).reshape( 2, 0 ).copyTo( rawCopy );
 				// 	display.showRawStereoYUV( rawCopy );
 				// }
+++count;
+ std::this_thread::sleep_for(std::chrono::microseconds(1));
 
-			}
+} else {
+ std::this_thread::sleep_for(std::chrono::microseconds(100));
+} 
 
-			if( count % skip == 0 )
-				display.waitKey();
-
-
-			if( dt_us > 0 ) {
-				std::chrono::steady_clock::time_point sleepTarget( loopStart + std::chrono::microseconds( dt_us ) );
-				//if( std::chrono::steady_clock::now() < sleepTarget )
-				std::this_thread::sleep_until( sleepTarget );
-			}
+			//if( count % skip == 0 )
+			//	display.waitKey();
 
 
-			count++;
+//			if( dt_us > 0 ) {
+//				std::chrono::steady_clock::time_point sleepTarget( loopStart + std::chrono::microseconds( dt_us ) );
+//				//if( std::chrono::steady_clock::now() < sleepTarget )
+//				std::this_thread::sleep_until( sleepTarget );
+//			}
+
+
 
 			if( numFrames > 0 && count >= numFrames ) {
 				keepGoing = false;
