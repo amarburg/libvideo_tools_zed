@@ -9,6 +9,7 @@ class LibVideoIOZedConan(ConanFile):
   default_options = "opencv_dir=''", "build_parallel=True"
   exports = '*'
   #requires =  "libvideoio/master@amarburg/testing"
+  requires = "g3log/master@amarburg/testing"
 
   def config(self):
     self.options["libvideoio"].opencv_dir = self.options.opencv_dir
