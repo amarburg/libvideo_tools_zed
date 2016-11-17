@@ -64,7 +64,7 @@ inline sl::zed::ZEDResolution_mode parseResolution( const std::string &arg )
 		return sl::zed::VGA;
 	else
 		;
-//		LOG(FATAL) << "Couldn't parse resolution \"" << arg << "\"";
+		LOG(FATAL) << "Couldn't parse resolution \"" << arg << "\"";
 }
 
 inline std::string resolutionToString( sl::zed::ZEDResolution_mode arg )

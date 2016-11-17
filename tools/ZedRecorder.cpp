@@ -15,7 +15,8 @@ namespace fs = boost::filesystem;
 
 
 #include <zed/Camera.hpp>
-//#include "libvideoio_zed/ZedUtils.h"
+#include "libvideoio_zed/ZedUtils.h"
+
 //#include "libvideoio_zed/ZedSource.h"
 
 #include <tclap/CmdLine.h>
@@ -58,7 +59,7 @@ int main( int argc, char** argv )
 	signal( SIGINT, signal_handler );
 
 	//try {
-		TCLAP::CmdLine cmd("LSDRecorder", ' ', "0.1");
+		TCLAP::CmdLine cmd("ZedRecorder", ' ', "0.1");
 
 		TCLAP::ValueArg<std::string> resolutionArg("r","resolution","Input resolution: hd2k,hd1080,hd720,vga",false,"hd1080","", cmd);
 		TCLAP::ValueArg<float> fpsArg("f","fps","Input FPS, otherwise defaults to max FPS from input source",false,0.0,"", cmd);
@@ -96,7 +97,7 @@ int main( int argc, char** argv )
 //	}
 
 		const bool needDepth = false; //( svoOutputArg.isSet() ? false : true );
-		const sl::zed::ZEDResolution_mode zedResolution = sl::zed::VGA; //parseResolution( resolutionArg.getValue() );
+		const sl::zed::ZEDResolution_mode zedResolution = parseResolution( resolutionArg.getValue() );
 		const int whichGpu = -1;
 
 		sl::zed::Camera *camera = NULL;
@@ -125,7 +126,7 @@ int main( int argc, char** argv )
 			err = camera->enableRecording( svoOutputArg.getValue() );
 
 			if (err != sl::zed::SUCCESS) {
-				std::cout << "Error while setting up logging (" << err << "): " << errcode2str(err) << std::endl;
+				LOG(FATAL) << "Error while setting up logging (" << err << "): " << errcode2str(err) << std::endl;
 			}
 		}
 
@@ -144,9 +145,9 @@ int main( int argc, char** argv )
 		int duration = durationArg.getValue();
 
 		if( duration > 0 )
-			std::cout << "Will log for " << duration << " seconds or press CTRL-C to stop." << std::endl;
+			LOG(INFO) << "Will log for " << duration << " seconds or press CTRL-C to stop." << std::endl;
 		else
-			std::cout<< "Logging now, press CTRL-C to stop." << std::endl;
+			LOG(INFO) << "Logging now, press CTRL-C to stop." << std::endl;
 
 		std::chrono::steady_clock::time_point start( std::chrono::steady_clock::now() );
 		std::chrono::steady_clock::time_point end( start + std::chrono::seconds( duration ) );
@@ -201,15 +202,15 @@ int main( int argc, char** argv )
 
 		std::chrono::duration<float> dur( std::chrono::steady_clock::now()  - start );
 
-		std::cout<< "Cleaning up..." << std::endl;
+		LOG(INFO) << "Cleaning up...";
 		if( camera && svoOutputArg.isSet() ) camera->stopRecording();
 		if( camera ) delete camera;
 
 
 
-		std::cout<< "Recorded " << count << " frames in " <<   dur.count() << endl;
-		std::cout<< " Average of " << (float)count / dur.count() << " FPS" << endl;
-		std::cout << "   " << miss << " / " << (miss+count) << " misses" << endl;
+		LOG(INFO) << "Recorded " << count << " frames in " <<   dur.count();
+		LOG(INFO) << " Average of " << (float)count / dur.count() << " FPS";
+		LOG(INFO) << "   " << miss << " / " << (miss+count) << " misses";
 
 		std::string fileName(svoOutputArg.getValue());
 
@@ -217,16 +218,10 @@ int main( int argc, char** argv )
 		if( !fileName.empty() ) {
 			unsigned int fileSize = fs::file_size( fs::path(fileName));
 			float fileSizeMB = float(fileSize) / (1024*1024);
-			std::cout<< "Resulting file is " << fileSizeMB << " MB" << std::endl;
-			std::cout<< "     " << fileSizeMB/dur.count() << " MB/sec" << std::endl;
-			std::cout << "     " << fileSizeMB/count << " MB/frame" << std::endl;
+			LOG(INFO) << "Resulting file is " << fileSizeMB << " MB";
+			LOG(INFO) << "     " << fileSizeMB/dur.count() << " MB/sec";
+			LOG(INFO) << "     " << fileSizeMB/count << " MB/frame";
 		}
-
-
-
-
-
-
 
 
 	return 0;
