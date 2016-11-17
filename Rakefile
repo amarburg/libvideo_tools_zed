@@ -1,4 +1,7 @@
 
+$:.unshift File.dirname(__FILE__) + "/.rb"
+require 'perf_testing'
+
 task :default => "debug:test"
 
 @conan_opts = {  build_parallel: 'False' }

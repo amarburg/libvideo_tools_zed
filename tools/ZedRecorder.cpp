@@ -69,6 +69,8 @@ int main( int argc, char** argv )
 		TCLAP::ValueArg<std::string> calibOutputArg("","calib-output","Output calibration file (from stereolabs SDK)",false,"","Calib filename", cmd);
 
 		TCLAP::ValueArg<std::string> statisticsOutputArg("","statistics-output","",false,"","", cmd);
+		TCLAP::ValueArg<std::string> statisticsIdArg("","statistics-id","",false,"","", cmd);
+
 
 		// TCLAP::SwitchArg noGuiSwitch("","no-gui","Don't show a GUI", cmd, false);
 
@@ -128,6 +130,8 @@ int main( int argc, char** argv )
 				LOG(FATAL) << "Error while setting up logging (" << err << "): " << errcode2str(err) << std::endl;
 			}
 		}
+
+		const float fps = 0.0; //= dataSource->fps();
 
 		//dataSource = new ZedSource( camera, needDepth );
 
@@ -220,6 +224,17 @@ int main( int argc, char** argv )
 			LOG(INFO) << "Resulting file is " << fileSizeMB << " MB";
 			LOG(INFO) << "     " << fileSizeMB/dur.count() << " MB/sec";
 			LOG(INFO) << "     " << fileSizeMB/count << " MB/frame";
+
+
+			if( statisticsOutputArg.isSet() ) {
+				ofstream out( statisticsOutputArg.getValue(), ios_base::out | ios_base::ate | ios_base::app );
+				if( out.is_open() ) {
+					if( statisticsIdArg.isSet() )
+						out << statisticsIdArg.getValue() << ',' << resolutionToString( zedResolution ) << "," << fps << "," << (guiSwitch.isSet() ? "display" : "") << "," << count << "," << dur.count() << "," << fileSizeMB << endl;
+					else
+						out << resolutionToString( zedResolution ) << "," << fps << "," << (guiSwitch.isSet() ? "display" : "") << "," << count << "," << dur.count() << "," << fileSizeMB << endl;
+				}
+			}
 		}
 
 
