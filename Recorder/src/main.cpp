@@ -66,7 +66,7 @@ volatile bool _run;
 #ifdef _WIN32
 
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
- 
+
             // Handle the CTRL-C signal.
 	if (fdwCtrlType== CTRL_C_EVENT)
 	{
@@ -74,9 +74,9 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
 		printf("\nSaving file...\n");
 		zed->stopRecording();
 		printf("\Done...\n");
-	 
+
 	}
-	
+
 
 	return FALSE;
 }
@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
     // CTRL-C (= kill signal) handler
 #ifdef _WIN32
 	if (!SetConsoleCtrlHandler(CtrlHandler, TRUE)) {
-		printf("\nERROR: Could not set control handler"); 
+		printf("\nERROR: Could not set control handler");
 		return 1;
 	}
 
@@ -181,14 +181,14 @@ int main(int argc, char **argv) {
 	_run = true;
     // Wait for the auto exposure and white balance
     std::this_thread::sleep_for(std::chrono::seconds(1));
-	
+
     // Recording loop
     cout << "Recording..." << endl;
     cout << "Press 'Ctrl+C' to stop and exit " << endl;
 	int count = 0;
-	while (_run) {
+	while (_run && count < 1200) {
 
- 
+
         //simple recording function
         if (!zed->grab(SENSING_MODE::STANDARD,0,0,0))
         {
@@ -204,9 +204,9 @@ int main(int argc, char **argv) {
         }
 		else
 			std::this_thread::sleep_for(std::chrono::microseconds(100));
-	 
+
     }
- 
+
 
 #ifdef _WIN32
 	delete zed;

@@ -117,6 +117,10 @@ int main( int argc, char** argv )
 
 		if( svoOutputArg.isSet() ) {
 			err = camera->enableRecording( svoOutputArg.getValue() );
+
+			if (err != sl::zed::SUCCESS) {
+				LOG(WARNING) << "Error while setting up logging (" << err << "): " << errcode2str(err);
+			}
 		}
 
 		//dataSource = new ZedSource( camera, needDepth );
@@ -180,7 +184,7 @@ dt_us = 0;
 
 } else {
  std::this_thread::sleep_for(std::chrono::microseconds(100));
-} 
+}
 
 			//if( count % skip == 0 )
 			//	display.waitKey();
