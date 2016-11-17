@@ -8,10 +8,20 @@ class LibVideoIOZedConan(ConanFile):
   options = {"opencv_dir": "ANY", "build_parallel": [True, False]}
   default_options = "opencv_dir=''", "build_parallel=True"
   exports = '*'
-  #requires =  "libvideoio/master@amarburg/testing"
-  requires = "TCLAP/master@jmmut/testing", \
-              "libactive_object/master@amarburg/testing", \
-              "g3log/master@amarburg/testing", 
+  requires =  "libvideoio/master@amarburg/testing"
+  
+  # requires = "TCLAP/master@jmmut/testing", \
+  #             "libactive_object/master@amarburg/testing", \
+  #             "g3log/master@amarburg/testing", \
+  #             "liblogger/master@amarburg/testing"
+
+  ## This doesn't
+  # requires = "TCLAP/master@jmmut/testing", \
+  #             "snappy/1.1.3@hoxnox/testing", \
+  #             "zlib/1.2.8@lasote/stable", \
+  #             "libactive_object/master@amarburg/testing", \
+  #             "g3log/master@amarburg/testing"
+
 
   def config(self):
     self.options["libvideoio"].opencv_dir = self.options.opencv_dir

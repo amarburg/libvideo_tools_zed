@@ -36,5 +36,19 @@ Put duration checking back in (7ce2b7a).  No apparent regression.
 Re-added display code which copies matrix from Zed to and OpenCV mat (but does not yet imshow) (4ecc066).
 Perhaps a slight regression (2-3 FPS)
 
+Added TCLAP and libactive_object as conan deps.   No apparent regression.
 
-Added TCLAP and libactive_object as conan deps.   No apparent regression
+Switched back to --std=c++11.  No regression.
+
+
+Interestingly, if I include all of liblogger's conan deps (snappy, zlib), but not liblogger itself, I don't see a regression,
+maybe a couple of FPS.
+
+
+Change zlib to static linkage, force rebuild of liblogger, regression goes away.
+
+Funny, change `default_options = ... "zlib:shared=False", ...` to True in liblogger's conanfile,
+rebuild (`conan ... --build=liblogger`) and I can make the regression appear.
+
+Return to original conanfile configuration -- depending on just libvideoio -- but with the
+static liblogger, and no regression.

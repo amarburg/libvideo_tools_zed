@@ -129,7 +129,7 @@ const bool doDisplay = guiSwitch.getValue();
 			err = camera->enableRecording( svoOutputArg.getValue() );
 
 			if (err != sl::zed::SUCCESS) {
-				LOG(FATAL) << "Error while setting up logging (" << err << "): " << errcode2str(err) << std::endl;
+				LOG(FATAL) << "Error while setting up logging (" << err << "): " << errcode2str(err);
 			}
 		}
 
@@ -152,7 +152,7 @@ const bool doDisplay = guiSwitch.getValue();
 		if( duration > 0 ) {
 			LOG(INFO) << "Will log for " << duration << " seconds or press CTRL-C to stop.";
 		} else {
-			LOG(INFO) << "Logging now, press CTRL-C to stop." << std::endl;
+			LOG(INFO) << "Logging now, press CTRL-C to stop.";
 		}
 
 		std::chrono::steady_clock::time_point start( std::chrono::steady_clock::now() );

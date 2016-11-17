@@ -43,7 +43,7 @@ endif()
 find_package( CUDA REQUIRED ${CUDA_VERSION} )
 
 ## C++ flags applied to all builds
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x" ) #-std=c++11")
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pg")
 
 ## Configure OpenCV ##
 
