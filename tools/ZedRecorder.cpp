@@ -199,9 +199,9 @@ int main( int argc, char** argv )
 
 
 
-		std::cout<< "Recorded " << count << " frames in " <<   dur.count() << std::endl;
-		std::cout<< " Average of " << (float)count / dur.count() << " FPS" << std::endl;
-		std::cout << "   " << miss << " / " << (miss+count) << " misses";
+		std::cout<< "Recorded " << count << " frames in " <<   dur.count() << endl;
+		std::cout<< " Average of " << (float)count / dur.count() << " FPS" << endl;
+		std::cout << "   " << miss << " / " << (miss+count) << " misses" << endl;
 
 		std::string fileName(svoOutputArg.getValue());
 
