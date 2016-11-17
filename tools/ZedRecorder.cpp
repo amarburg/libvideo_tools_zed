@@ -88,7 +88,7 @@ int main( int argc, char** argv )
 
 		zed_recorder::Display display( guiSwitch.getValue() );
 
-		const bool needDepth = ( svoOutputArg.isSet() ? false : true );
+		const bool needDepth = false; //( svoOutputArg.isSet() ? false : true );
 		const sl::zed::ZEDResolution_mode zedResolution = parseResolution( resolutionArg.getValue() );
 		const sl::zed::MODE zedMode = (needDepth ? sl::zed::MODE::PERFORMANCE : sl::zed::MODE::NONE);
 		const int whichGpu = -1;
@@ -133,7 +133,7 @@ int main( int argc, char** argv )
 		CHECK( fps >= 0 );
 
 		int dt_us = (fps > 0) ? (1e6/fps) : 0;
-		const float sleepFudge = 1.0;
+		const float sleepFudge = 0.9;
 		dt_us *= sleepFudge;
 
 		LOG(INFO) << "Input is at " << resolutionToString( zedResolution ) << " at nominal " << fps << "FPS";
@@ -150,7 +150,7 @@ int main( int argc, char** argv )
 		// Wait for the auto exposure and white balance
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 
-		int count = 0, skip = skipArg.getValue();
+		int count = 0, skip = 10;
 		while( keepGoing ) {
 			if( count > 0 && (count % 100)==0 ) LOG(INFO) << count << " frames";
 
@@ -160,7 +160,7 @@ int main( int argc, char** argv )
 
 			if( svoOutputArg.isSet() ) {
 
-				if( dataSource->grab() ) {
+				if( !dataSource->grab() ) {
 					LOG(WARNING) << "Error occured while recording from camera";
 				}
 
@@ -182,8 +182,6 @@ int main( int argc, char** argv )
 			} else {
 
 				if( dataSource->grab() ) {
-
-					if( count > startAtArg.getValue() ) {
 
 					cv::Mat left, right, depth;
 					dataSource->getImage( 0, left );
