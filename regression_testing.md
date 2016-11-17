@@ -21,3 +21,10 @@ re-enabled my own log sink (still just a few test messages, though) (e505ce1).
 Very minor performance drop (~1fps?)
 
 Try sl::zed::Camera::sticktoCPUCore(3).   21.8124 FPS.
+
+
+Re-enabled g3log outputs rather than cout (992f0af).  No regression (faster?)
+as a check, 120 frames at hd720 = 15.5709 FPS
+hd1080 = 6.75292   FPS
+
+noting that these match the performance of the zed viewer software (~7 FPS in HD1080, 15-20GPS in HD720)
