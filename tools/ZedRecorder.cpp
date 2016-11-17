@@ -145,12 +145,13 @@ int main( int argc, char** argv )
 		// Wait for the auto exposure and white balance
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 
-		int duration = durationArg.getValue();
+		const int duration = durationArg.getValue();
 
-		if( duration > 0 )
-			LOG(INFO) << "Will log for " << duration << " seconds or press CTRL-C to stop." << std::endl;
-		else
+		if( duration > 0 ) {
+			LOG(INFO) << "Will log for " << duration << " seconds or press CTRL-C to stop.";
+		} else {
 			LOG(INFO) << "Logging now, press CTRL-C to stop." << std::endl;
+		}
 
 		std::chrono::steady_clock::time_point start( std::chrono::steady_clock::now() );
 		std::chrono::steady_clock::time_point end( start + std::chrono::seconds( duration ) );
@@ -160,9 +161,8 @@ int main( int argc, char** argv )
 
 			if( count > 0 && (count % 100)==0 ) LOG(INFO) << count << " frames";
 
-			//std::chrono::steady_clock::time_point loopStart( std::chrono::steady_clock::now() );
-
-			//if( (duration > 0) && (loopStart > end) ) { keepGoing = false;  break; }
+			std::chrono::steady_clock::time_point loopStart( std::chrono::steady_clock::now() );
+			if( (duration > 0) && (loopStart > end) ) { keepGoing = false;  break; }
 
 			//				if( !dataSource->grab() ) {
 			//					LOG(WARNING) << "Error occured while recording from camera";
