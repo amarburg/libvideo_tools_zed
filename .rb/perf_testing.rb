@@ -13,7 +13,7 @@ task :perf do
     5.times.each { |i|
 
       svo ="/mnt/disk/ubuntu/perf_testing/perf_#{resolution}_#{Time::now.strftime("%H%M%S")}.svo"
-      sh "#{binary} --resolution #{resolution} --frames 1200 --statistics-output #{stats_file} --statistics-id #{git_hash} --svo-output #{svo} --display"
+      sh "#{binary} --resolution #{resolution} --frames 1200 --statistics-output #{stats_file} --statistics-id #{git_hash} --svo-output #{svo}"
 
     }
 

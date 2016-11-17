@@ -31,3 +31,10 @@ noting that these match the performance of the zed viewer software (~7 FPS in HD
 Added "count" message in main loop (29b5bab).  No regression.
 
 Put duration checking back in (7ce2b7a).  No apparent regression.
+
+
+Re-added display code which copies matrix from Zed to and OpenCV mat (but does not yet imshow) (4ecc066).
+Perhaps a slight regression (2-3 FPS)
+
+
+Added TCLAP and libactive_object as conan deps.   No apparent regression
