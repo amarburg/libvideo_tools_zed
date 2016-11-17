@@ -187,17 +187,11 @@ int main( int argc, char** argv )
 		//				std::this_thread::sleep_until( sleepTarget );
 		//			}
 
-
-
-		//if( numFrames > 0 && count >= numFrames ) {
-		//	keepGoing = false;
-		//}
-
 		if( numFramesArg.isSet() && count >= numFramesArg.getValue() ) keepGoing = false;
 
 }
 
-std::chrono::duration<float> dur( std::chrono::steady_clock::now()  - start );
+		std::chrono::duration<float> dur( std::chrono::steady_clock::now()  - start );
 
 		std::cout<< "Cleaning up..." << std::endl;
 		if( camera && svoOutputArg.isSet() ) camera->stopRecording();

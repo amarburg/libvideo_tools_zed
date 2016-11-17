@@ -8,7 +8,7 @@ class LibVideoIOZedConan(ConanFile):
   options = {"opencv_dir": "ANY", "build_parallel": [True, False]}
   default_options = "opencv_dir=''", "build_parallel=True"
   exports = '*'
-#  requires =  "libvideoio/master@amarburg/testing"
+  #requires =  "libvideoio/master@amarburg/testing"
 
   def config(self):
     self.options["libvideoio"].opencv_dir = self.options.opencv_dir
