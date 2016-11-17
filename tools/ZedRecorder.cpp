@@ -84,10 +84,9 @@ int main( int argc, char** argv )
 		cmd.parse(argc, argv );
 
 		// Output validation
-		// if( !svoOutputArg.isSet() && !guiSwitch.isSet() ) {
-		// 	std::cout << "No output options set." << std::endl;
-		// 	exit(-1);
-		// }
+		if( !svoOutputArg.isSet() && !guiSwitch.isSet() ) {
+			LOG(WARNING) << "No output options set.";
+		}
 
 		//zed_recorder::Display display( guiSwitch.getValue() );
 //} catch (TCLAP::ArgException &e)  // catch any exceptions
@@ -155,7 +154,7 @@ int main( int argc, char** argv )
 		int count = 0, miss = 0, skip = 10;
 		while( keepGoing ) {
 
-			//if( count > 0 && (count % 100)==0 ) LOG(INFO) << count << " frames";
+			if( count > 0 && (count % 100)==0 ) LOG(INFO) << count << " frames";
 
 			//std::chrono::steady_clock::time_point loopStart( std::chrono::steady_clock::now() );
 
