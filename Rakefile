@@ -32,6 +32,15 @@ build_root = ENV['BUILD_ROOT'] || "build"
   end
 }
 
+
+task :foo do
+  sh "rm -rf build-jetson-Release"
+  sh "rake release:build"
+  #sh "time build-jetson-Release/bin/ZedRecorder --resolution vga --svo-output /mnt/disk/ubuntu/foobar.svo --frames 1200"
+  #sh "time build-jetson-Release/bin/Recorder --resolution 3 --filename /mnt/disk/ubuntu/recorder.svo"
+end
+
+
 namespace :conan  do
   desc "Export as Conan package"
   task :export => :distclean do

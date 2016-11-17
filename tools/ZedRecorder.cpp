@@ -69,6 +69,8 @@ int main( int argc, char** argv )
 
 
 		TCLAP::ValueArg<int> durationArg("","duration","Duration",false,0,"seconds", cmd);
+		TCLAP::ValueArg<int> numFramesArg("","frames","Number of frames to capture",false,0,"frames", cmd);
+
 
 		cmd.parse(argc, argv );
 
@@ -139,7 +141,8 @@ int main( int argc, char** argv )
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 
 		int count = 0, skip = 10;
-		while( keepGoing  && count < 1200 ) {
+		while( keepGoing ) {
+
 			//if( count > 0 && (count % 100)==0 ) LOG(INFO) << count << " frames";
 
 			//std::chrono::steady_clock::time_point loopStart( std::chrono::steady_clock::now() );
@@ -185,6 +188,10 @@ int main( int argc, char** argv )
 		//if( numFrames > 0 && count >= numFrames ) {
 		//	keepGoing = false;
 		//}
+
+		if( numFramesArg.isSet() && count >= numFramesArg.getValue() ) {
+			keepGoing = false;
+		}
 }
 
 
@@ -212,7 +219,7 @@ int main( int argc, char** argv )
 
 
 
-	
+
 
 
 

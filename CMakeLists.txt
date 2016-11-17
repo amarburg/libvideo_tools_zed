@@ -5,7 +5,7 @@ include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
 
 find_package(Eigen3 REQUIRED )
-find_package(Boost COMPONENTS filesystem system REQUIRED )
+find_package(Boost COMPONENTS filesystem system program_options REQUIRED )  #n.b. program_options is only required for my version of Stereolabs "Recorder"
 
 include( ${PROJECT_SOURCE_DIR}/cmake/Zed.cmake )
 set( CUDA_VERSION 8.0 )
@@ -63,7 +63,7 @@ include_directories( ${LIBVIDEO_TOOLS_INCLUDE_DIRS} )
 #add_subdirectory("lib/")
 add_subdirectory("tools/")
 
-option( BUILD_UNIT_TESTS "Build unit tests" ON )
+option( BUILD_UNIT_TESTS "Build unit tests" OFF )
 if( BUILD_UNIT_TESTS )
-  add_subdirectory( test/unit/ )
+  #add_subdirectory( test/unit/ )
 endif()

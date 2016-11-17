@@ -9,6 +9,9 @@ include_directories(
 # )
 
 add_executable( ZedRecorder ZedRecorder.cpp)
+target_link_libraries( ZedRecorder
+  ${ZED_CUDA_LIBRARIES}
+  ${Boost_LIBRARIES}   )
 
 add_executable( Recorder main.cpp )
 target_link_libraries( Recorder
