@@ -11,4 +11,9 @@ Re-enabled running without writing SVO, also moved timing code closer to for loo
 -- perhaps try benchmarking streaming to SSD ... simple DD test gives 194-218
 
 
+Added just g3log as a conan dependency (f5bce02).  No regression.
+
+enabled one logger message.  No apparent regression.
+
+
 Re-enabled libvideoio in conanfile.py

@@ -18,8 +18,9 @@ namespace fs = boost::filesystem;
 //#include "libvideoio_zed/ZedUtils.h"
 //#include "libvideoio_zed/ZedSource.h"
 
-
 #include <tclap/CmdLine.h>
+
+#include <g3log/g3log.hpp>
 
 //#include "libvideoio/DataSource.h"
 //#include "libvideoio/Undistorter.h"
@@ -108,7 +109,7 @@ int main( int argc, char** argv )
 		err = camera->init( initParams );
 
 		if (err != sl::zed::SUCCESS) {
-			std::cout << "Unable to init the Zed camera (" << err << "): " << errcode2str(err) <<std::endl;
+			LOG(FATAL) << "Unable to init the Zed camera (" << err << "): " << errcode2str(err);
 			delete camera;
 			exit(-1);
 		}
