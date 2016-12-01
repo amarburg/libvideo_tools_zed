@@ -52,3 +52,8 @@ rebuild (`conan ... --build=liblogger`) and I can make the regression appear.
 
 Return to original conanfile configuration -- depending on just libvideoio -- but with the
 static liblogger, and no regression.
+
+
+
+Realized, of course, I can just get zlib from the system, don't need to build it.   So I removed
+it from liblogger's conanfile.py (liblogger commit 795b22086da8e168f35c4c44a9c0b52e98ce3eb5).   No regression.
