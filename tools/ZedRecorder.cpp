@@ -75,6 +75,8 @@ int main( int argc, char** argv )
 
 	TCLAP::ValueArg<int> durationArg("","duration","Duration",false,0,"seconds", cmd);
 	TCLAP::ValueArg<int> numFramesArg("","frames","Number of frames to capture",false,0,"frames", cmd);
+	TCLAP::ValueArg<int> skipArg("","skip","NOnly display every <skip> frames",false,10,"frames", cmd);
+
 
 
 	cmd.parse(argc, argv );
@@ -86,6 +88,8 @@ int main( int argc, char** argv )
 
 	const bool doDisplay = guiSwitch.getValue();
 	libvideoio::Display display( guiSwitch.getValue() );
+
+	int skip = skipArg.getValue();
 
 	//} catch (TCLAP::ArgException &e)  // catch any exceptions
 	//	{
@@ -153,7 +157,7 @@ int main( int argc, char** argv )
 	std::chrono::steady_clock::time_point start( std::chrono::steady_clock::now() );
 	std::chrono::steady_clock::time_point end( start + std::chrono::seconds( duration ) );
 
-	int count = 0, miss = 0, displayed = 0, skip = 10;
+	int count = 0, miss = 0, displayed = 0;
 	bool logOnce = true;
 	while( keepGoing ) {
 
