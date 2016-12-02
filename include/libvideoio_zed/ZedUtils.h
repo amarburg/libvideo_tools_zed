@@ -5,6 +5,7 @@
 
 #include "libvideoio/Camera.h"
 #include "libvideoio/ImageSize.h"
+using namespace libvideoio;
 
 // As of API 1.0.0, the resolutions have changed slightly:
 // 2.2K	4416x1242	15fps	Wide
@@ -13,19 +14,19 @@
 // VGA (Wide)	1344x376	15/30/60/100fps	Extra Wide
 
 // "Casting" structs
-struct ZedCamera : public lsd_slam::Camera
+struct ZedCamera : public libvideoio::Camera
 {
 	ZedCamera( sl::zed::StereoParameters* params )
-      : lsd_slam::Camera( params->LeftCam.fx, params->LeftCam.fy,
+      : libvideoio::Camera( params->LeftCam.fx, params->LeftCam.fy,
  								params->LeftCam.cx, params->LeftCam.cy )
     {;}
 
 };
 
-struct ZedImageSize : public lsd_slam::ImageSize
+struct ZedImageSize : public ImageSize
 {
 	ZedImageSize( const sl::zed::resolution &res )
-		: lsd_slam::ImageSize( res.width, res.height)
+		: ImageSize( res.width, res.height)
 	{;}
 };
 
