@@ -14,6 +14,7 @@ target_link_libraries( ZedRecorder
   ${ZED_CUDA_LIBRARIES}
   ${Boost_LIBRARIES}
   ${OpenCV_LIBS}
+  ${CMAKE_THREAD_LIBS_INIT}
   ${CONAN_LIBS} )
 
 add_executable( Recorder main.cpp )
@@ -21,6 +22,7 @@ target_link_libraries( Recorder
   ${ZED_CUDA_LIBRARIES}
   ${OpenCV_LIBS}
   ${CONAN_LIBS}
+  ${CMAKE_THREAD_LIBS_INIT}
   ${Boost_LIBRARIES}   )
 
 #set_target_properties( ZedRecorder PROPERTIES COMPILE_FLAGS "-ggdb")
