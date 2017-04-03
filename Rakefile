@@ -1,6 +1,8 @@
 
-$:.unshift File.dirname(__FILE__) + "/.rb"
+$:.unshift File.dirname(__FILE__) + "/rake"
 require 'perf_testing'
+require 'docker'
+require 'dependencies'
 
 task :default => "debug:test"
 
@@ -24,6 +26,7 @@ build_root = ENV['BUILD_ROOT'] || "build"
     task :build do
       FileUtils::mkdir build_dir unless FileTest::directory? build_dir
       chdir build_dir do
+        sh "conan config set settings_defaults.compiler.libcxx=libstdc++11"
         sh "conan install %s .. --build=%s" % [conan_opts.join(' '), @conan_build]
         sh "conan build .."
       end
@@ -57,30 +60,4 @@ end
 
 task :distclean do
   sh "rm -rf build-*"
-end
-
-namespace :dependencies do
-
-  task :trusty do
-    sh "sudo apt-get install -y cmake libopencv-dev libtclap-dev libboost-all-dev"
-    sh "pip install conan"
-  end
-
-  task :osx do
-    sh "brew update"
-    sh "brew tap homebrew/science"
-    sh "brew install homebrew/science/opencv tclap conan"
-  end
-
-  namespace :travis do
-
-    task :linux => "dependencies:trusty"
-
-    task :osx => [:pip_uninstall_numpy, "dependencies:osx"]
-
-    task :pip_uninstall_numpy do
-      sh "pip uninstall -y numpy"
-    end
-
-  end
 end

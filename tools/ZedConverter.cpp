@@ -30,6 +30,7 @@ namespace fs = boost::filesystem;
 #include "libvideoio/Display.h"
 #include "libvideoio/ImageOutput.h"
 #include "libvideoio/VideoOutput.h"
+using namespace libvideoio;
 
 
 using namespace lsd_slam;
@@ -60,16 +61,16 @@ int main( int argc, char** argv )
 	try {
 		TCLAP::CmdLine cmd("LSDRecorder", ' ', "0.1");
 
-		TCLAP::ValueArg<std::string> resolutionArg("r","resolution","Input resolution: hd2k,hd1080,hd720,vga",false,"hd1080","", cmd);
-		TCLAP::ValueArg<float> fpsArg("f","fps","Input FPS, otherwise defaults to max FPS from input source",false,0.0,"", cmd);
+		//TCLAP::ValueArg<std::string> resolutionArg("r","resolution","Input resolution: hd2k,hd1080,hd720,vga",false,"hd1080","", cmd);
+		//TCLAP::ValueArg<float> fpsArg("f","fps","Input FPS, otherwise defaults to max FPS from input source",false,0.0,"", cmd);
 
 		TCLAP::ValueArg<std::string> svoInputArg("i","svo-input","Input SVO file",true,"","", cmd);
 
 		TCLAP::ValueArg<std::string> loggerOutputArg("l","log-output","Output Logger filename",false,"","", cmd);
 		TCLAP::ValueArg<std::string> compressionArg("","compression","",false,"snappy","SVO filename", cmd);
 
-		TCLAP::ValueArg<std::string> imageOutputArg("","image-output","",false,"","SVO filename", cmd);
-		TCLAP::ValueArg<std::string> videoOutputArg("","video-output","",false,"","SVO filename", cmd);
+		TCLAP::ValueArg<std::string> imageOutputArg("","image-output","",false,"","Output image directory", cmd);
+		TCLAP::ValueArg<std::string> videoOutputArg("","video-output","",false,"","Output video filename", cmd);
 
 		TCLAP::ValueArg<int> skipArg("","skip","",false,1,"", cmd);
 		TCLAP::ValueArg<int> startAtArg("","start-at","",false,0,"", cmd);
@@ -111,8 +112,8 @@ int main( int argc, char** argv )
 			exit(-1);
 		}
 
-		zed_recorder::Display display( guiSwitch.getValue() );
-		zed_recorder::ImageOutput imageOutput( imageOutputArg.getValue() );
+		libvideoio::Display display( guiSwitch.getValue() );
+		libvideoio::ImageOutput imageOutput( imageOutputArg.getValue() );
 
 		//		const sl::zed::ZEDResolution_mode zedResolution = parseResolution( resolutionArg.getValue() );
 		const int whichGpu = -1;
@@ -140,10 +141,10 @@ int main( int argc, char** argv )
 
 		dataSource = new ZedSource( camera, depthSwitch.getValue() );
 
-		if( calibOutputArg.isSet() ) {
-			LOG(INFO) << "Saving calibration to \"" << calibOutputArg.getValue() << "\"";
-			calibrationFromZed( camera, calibOutputArg.getValue() );
-		}
+		// if( calibOutputArg.isSet() ) {
+		// 	LOG(INFO) << "Saving calibration to \"" << calibOutputArg.getValue() << "\"";
+		// 	calibrationFromZed( camera, calibOutputArg.getValue() );
+		// }
 
 		int numFrames = dataSource->numFrames();
 		float fps = dataSource->fps();
@@ -169,13 +170,13 @@ int main( int argc, char** argv )
 		imageOutput.registerField( rightHandle, "right" );
 		imageOutput.registerField( depthHandle, "depth" );
 
-		zed_recorder::VideoOutput videoOutput( videoOutputArg.getValue(), fps > 0 ? fps : 30 );
+		libvideoio::VideoOutput videoOutput( videoOutputArg.getValue(), fps > 0 ? fps : 30 );
 
 		int dt_us = (fps > 0) ? (1e6/fps) : 0;
 		const float sleepFudge = 1.0;
 		dt_us *= sleepFudge;
 
-		LOG(INFO) << "Input is at " << resolutionToString( zedResolution ) << " at nominal " << fps << "FPS";
+		//LOG(INFO) << "Input is at " << resolutionToString( zedResolution ) << " at nominal " << fps << "FPS";
 
 		std::chrono::steady_clock::time_point start( std::chrono::steady_clock::now() );
 		int duration = durationArg.getValue();
@@ -285,7 +286,7 @@ int main( int argc, char** argv )
 
 
 		LOG(INFO) << "Cleaning up...";
-		if( camera && svoOutputArg.isSet() ) camera->stopRecording();
+		//if( camera && svoOutputArg.isSet() ) camera->stopRecording();
 
 		std::chrono::duration<float> dur( std::chrono::steady_clock::now()  - start );
 
@@ -293,9 +294,11 @@ int main( int argc, char** argv )
 		LOG(INFO) << " Average of " << (float)count / dur.count() << " FPS";
 
 		std::string fileName;
-		if( svoOutputArg.isSet() ) {
-			fileName = svoOutputArg.getValue();
-		} else if( loggerOutputArg.isSet() ) {
+		// if( svoOutputArg.isSet() ) {
+		// 	fileName = svoOutputArg.getValue();
+		// } else
+
+		if( loggerOutputArg.isSet() ) {
 			logWriter.close();
 			fileName = loggerOutputArg.getValue();
 		}
@@ -310,7 +313,8 @@ int main( int argc, char** argv )
 			if( statisticsOutputArg.isSet() ) {
 				ofstream out( statisticsOutputArg.getValue(), ios_base::out | ios_base::ate | ios_base::app );
 				if( out.is_open() ) {
-					out << resolutionToString( zedResolution ) << "," << fps << "," << (guiSwitch.isSet() ? "display" : "") << "," << count << "," << dur.count() << ","
+					// TODO.  Include resolution in statistics output"
+					out <<  "," << fps << "," << (guiSwitch.isSet() ? "display" : "") << "," << count << "," << dur.count() << ","
 					<< fileSizeMB << endl;
 				}
 			}

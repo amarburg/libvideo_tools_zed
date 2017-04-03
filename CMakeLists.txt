@@ -8,7 +8,7 @@ find_package(Eigen3 REQUIRED )
 find_package(Boost COMPONENTS filesystem system program_options REQUIRED )  #n.b. program_options is only required for my version of Stereolabs "Recorder"
 
 include( ${PROJECT_SOURCE_DIR}/cmake/Zed.cmake )
-set( CUDA_VERSION 8.0 )
+#set( CUDA_VERSION 8.0 )
 
 ## Need this workaround for CUDA 8.0
 find_package( CUDA )

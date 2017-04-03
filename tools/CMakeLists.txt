@@ -9,21 +9,30 @@ include_directories(
 #    "${CMAKE_CXX_FLAGS} -ggdb"
 # )
 
-add_executable( ZedRecorder ZedRecorder.cpp)
-target_link_libraries( ZedRecorder
+add_executable( ZedConverter ZedConverter.cpp)
+target_link_libraries( ZedConverter
   ${ZED_CUDA_LIBRARIES}
   ${Boost_LIBRARIES}
   ${OpenCV_LIBS}
   ${CMAKE_THREAD_LIBS_INIT}
   ${CONAN_LIBS} )
 
-add_executable( Recorder main.cpp )
-target_link_libraries( Recorder
+add_executable( ZedRecorder ZedRecorder.cpp)
+target_link_libraries( ZedRecorder
   ${ZED_CUDA_LIBRARIES}
+  ${Boost_LIBRARIES}
   ${OpenCV_LIBS}
-  ${CONAN_LIBS}
   ${CMAKE_THREAD_LIBS_INIT}
-  ${Boost_LIBRARIES}   )
+  ${CUDA_LIBRARIES}
+  ${CONAN_LIBS} )
+
+# add_executable( Recorder main.cpp )
+# target_link_libraries( Recorder
+#   ${ZED_CUDA_LIBRARIES}
+#   ${OpenCV_LIBS}
+#   ${CONAN_LIBS}
+#   ${CMAKE_THREAD_LIBS_INIT}
+#   ${Boost_LIBRARIES}   )
 
 #set_target_properties( ZedRecorder PROPERTIES COMPILE_FLAGS "-ggdb")
 
