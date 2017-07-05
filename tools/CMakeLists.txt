@@ -4,11 +4,6 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-
-# set(CMAKE_CXX_FLAGS
-#    "${CMAKE_CXX_FLAGS} -ggdb"
-# )
-
 add_executable( ZedConverter ZedConverter.cpp)
 target_link_libraries( ZedConverter
   ${ZED_CUDA_LIBRARIES}
@@ -25,17 +20,3 @@ target_link_libraries( ZedRecorder
   ${CMAKE_THREAD_LIBS_INIT}
   ${CUDA_LIBRARIES}
   ${CONAN_LIBS} )
-
-# add_executable( Recorder main.cpp )
-# target_link_libraries( Recorder
-#   ${ZED_CUDA_LIBRARIES}
-#   ${OpenCV_LIBS}
-#   ${CONAN_LIBS}
-#   ${CMAKE_THREAD_LIBS_INIT}
-#   ${Boost_LIBRARIES}   )
-
-#set_target_properties( ZedRecorder PROPERTIES COMPILE_FLAGS "-ggdb")
-
-# add_executable( ZedConverter ZedConverter.cpp)
-# target_link_libraries( ZedConverter videoio_zed )
-#set_target_properties( ZedConverter PROPERTIES COMPILE_FLAGS "-ggdb")

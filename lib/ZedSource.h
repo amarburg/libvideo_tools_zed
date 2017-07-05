@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include <zed/Camera.hpp>
+#include <sl/Camera.hpp>
 #include "libvideoio/DataSource.h"
 
 namespace lsd_slam {
@@ -9,14 +9,10 @@ namespace lsd_slam {
 class ZedSource : public DataSource {
 public:
 
-#ifdef ZED_1_0
-  ZedSource( sl::zed::Camera *camera, bool doComputeDepth = false, sl::zed::SENSING_MODE mode = sl::zed::STANDARD )
-#else
-	ZedSource( sl::zed::Camera *camera, bool doComputeDepth = false, sl::zed::SENSING_MODE mode = sl::zed::RAW )
-#endif
-    :_cam( camera ),
-     _mode( mode ),
-     _computeDepth( doComputeDepth )
+	ZedSource( sl::Camera *camera, bool doComputeDepth = false, sl::SENSING_MODE mode = sl::RAW )
+    : _cam( camera ),
+      _mode( mode ),
+      _computeDepth( doComputeDepth )
 
   {
     CHECK( _cam );
@@ -39,7 +35,7 @@ public:
 
   virtual bool grab( void )
   {
-    if( _cam->grab( sl::zed::STANDARD, false, false, false ) ) {
+    if( _cam->grab( sl::STANDARD, false, false, false ) ) {
 //    if( _cam->grab( _mode, _computeDepth, _computeDepth, false ) ) {
       LOG( WARNING ) << "Error from Zed::grab";
       return false;
@@ -51,9 +47,9 @@ public:
   virtual int getImage( int i, cv::Mat &mat )
   {
     if( i == 0 )
-      mat = sl::zed::slMat2cvMat( _cam->retrieveImage( sl::zed::LEFT ) );
+      mat = sl::slMat2cvMat( _cam->retrieveImage( sl::LEFT ) );
     else if( i == 1 )
-      mat = sl::zed::slMat2cvMat( _cam->retrieveImage( sl::zed::RIGHT ) );
+      mat = sl::slMat2cvMat( _cam->retrieveImage( sl::RIGHT ) );
 
     return 0;
   }
@@ -61,7 +57,7 @@ public:
   virtual void getDepth( cv::Mat &mat )
   {
       if( _computeDepth )
-        mat = sl::zed::slMat2cvMat( _cam->retrieveMeasure( sl::zed::DEPTH ) );
+        mat = sl::slMat2cvMat( _cam->retrieveMeasure( sl::DEPTH ) );
       else
         LOG(WARNING) << "Asked for depth after begin configured not to compute depth";
   }
@@ -73,8 +69,8 @@ public:
 
 protected:
 
-  sl::zed::Camera *_cam;
-  sl::zed::SENSING_MODE _mode;
+  sl::Camera *_cam;
+  sl::SENSING_MODE _mode;
   bool _computeDepth;
 
 

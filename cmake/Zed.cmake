@@ -9,7 +9,8 @@ find_package(ZED REQUIRED)
 
 set( ZED_INCLUDE_DIRS /usr/local/zed/include )
 
-set( ZED_CUDA_LIBRARIES ${ZED_LIBRARIES}
+set( ZED_CUDA_LIBRARIES /usr/local/zed/lib/libsl_core.so
+                        ${ZED_LIBRARIES}
                         ${CUDA_LIBRARIES}
                         ${CUDA_npps_LIBRARY}
                         ${CUDA_nppi_LIBRARY} )

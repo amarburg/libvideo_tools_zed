@@ -10,9 +10,9 @@ using namespace std;
 #include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
 
-#include <zed/Camera.hpp>
-#include "libvideoio_zed/ZedUtils.h"
-#include "libvideoio_zed/ZedSource.h"
+#include <sl/Camera.hpp>
+#include "ZedUtils.h"
+#include "ZedSource.h"
 
 
 #include <tclap/CmdLine.h>
