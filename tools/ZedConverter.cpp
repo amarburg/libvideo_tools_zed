@@ -129,7 +129,7 @@ int main( int argc, char** argv )
 		initParameters.depth_mode = sl::DEPTH_MODE_MEDIUM;
 
 		sl::RuntimeParameters runtimeParameters;
-		runtimeParameters.enable_depth = false;
+		runtimeParameters.enable_depth = true;
 		runtimeParameters.enable_point_cloud = false;
 		runtimeParameters.sensing_mode = sl::SENSING_MODE_STANDARD;
 
@@ -289,8 +289,7 @@ int main( int argc, char** argv )
 				LOG(WARNING) << "Problem grabbing from camera.";
 			}
 
-			if( count % skip == 0 )
-			display.waitKey();
+			if( count % skip == 0 ) display.waitKey();
 
 
 			if( dt_us > 0 ) {

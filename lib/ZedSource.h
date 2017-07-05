@@ -37,7 +37,7 @@ public:
   virtual bool grab( void )
   {
 		auto err = _cam.grab( _runtimeParameters );
-    if(  err != sl::SUCCESS ) {
+    if( err != sl::SUCCESS ) {
       LOG( WARNING ) << "Error from Zed::grab: " << sl::errorCode2str(err);
       return false;
     }
@@ -49,10 +49,17 @@ public:
   {
 		sl::Mat slMat;
 
+		sl::VIEW view;
+
     if( i == 0 )
-      _cam.retrieveImage( slMat, sl::VIEW_LEFT );
+			view = sl::VIEW_LEFT;
     else if( i == 1 )
-			_cam.retrieveImage( slMat, sl::VIEW_RIGHT );
+			view = sl::VIEW_RIGHT;
+
+		auto err = _cam.retrieveImage( slMat, view );
+		if( err != sl::SUCCESS ) {
+			LOG(WARNING) << "Error retrieving image from Zed: " << sl::errorCode2str(err);
+		}
 
 		cvMat = slMat2cvMat( slMat );
     return 0;
@@ -62,9 +69,14 @@ public:
   {
 			sl::Mat slMat;
 
-      if( _computeDepth )
-					_cam.retrieveMeasure(slMat, sl::MEASURE_DEPTH );
-      else
+			sl::ERROR_CODE err;
+      if( _computeDepth ){
+					auto err = _cam.retrieveMeasure(slMat, sl::MEASURE_DEPTH );
+
+					if( err != sl::SUCCESS ) {
+						LOG(WARNING) << "Error retrieving image from Zed: " << sl::errorCode2str(err);
+					}
+      }else
         LOG(WARNING) << "Asked for depth after begin configured not to compute depth";
 
 			cvMat = slMat2cvMat( slMat );
