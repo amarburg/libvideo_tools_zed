@@ -9,19 +9,18 @@ namespace lsd_slam {
 class ZedSource : public DataSource {
 public:
 
-	ZedSource( sl::Camera *camera, bool doComputeDepth = false, sl::SENSING_MODE mode = sl::RAW )
+	ZedSource( sl::Camera &camera, bool doComputeDepth = false, sl::SENSING_MODE mode = sl::SENSING_MODE_STANDARD )
     : _cam( camera ),
-      _mode( mode ),
-      _computeDepth( doComputeDepth )
+      _computeDepth( doComputeDepth ),
+			_runtimeParameters( mode, true, false )
 
   {
-    CHECK( _cam );
     _numImages = 2;
     _hasDepth = true;
 
-    _fps = _cam->getCurrentFPS();
+    //_fps = _cam->getCurrentFPS();
 
-    LOG(INFO) << "Camera reports fps: " << _fps;
+    //LOG(INFO) << "Camera reports fps: " << _fps;
   }
 
   // Delete copy operators
@@ -30,47 +29,57 @@ public:
 
   virtual int numFrames( void ) const
   {
-    return _cam->getSVONumberOfFrames();
+    return _cam.getSVONumberOfFrames();
   };
+
+
 
   virtual bool grab( void )
   {
-    if( _cam->grab( sl::STANDARD, false, false, false ) ) {
-//    if( _cam->grab( _mode, _computeDepth, _computeDepth, false ) ) {
-      LOG( WARNING ) << "Error from Zed::grab";
+		auto err = _cam.grab( _runtimeParameters );
+    if(  err != sl::SUCCESS ) {
+      LOG( WARNING ) << "Error from Zed::grab: " << sl::errorCode2str(err);
       return false;
     }
 
     return true;
   }
 
-  virtual int getImage( int i, cv::Mat &mat )
+  virtual int getImage( int i, cv::Mat &cvMat )
   {
-    if( i == 0 )
-      mat = sl::slMat2cvMat( _cam->retrieveImage( sl::LEFT ) );
-    else if( i == 1 )
-      mat = sl::slMat2cvMat( _cam->retrieveImage( sl::RIGHT ) );
+		sl::Mat slMat;
 
+    if( i == 0 )
+      _cam.retrieveImage( slMat, sl::VIEW_LEFT );
+    else if( i == 1 )
+			_cam.retrieveImage( slMat, sl::VIEW_RIGHT );
+
+		cvMat = slMat2cvMat( slMat );
     return 0;
   }
 
-  virtual void getDepth( cv::Mat &mat )
+  virtual void getDepth( cv::Mat &cvMat )
   {
+			sl::Mat slMat;
+
       if( _computeDepth )
-        mat = sl::slMat2cvMat( _cam->retrieveMeasure( sl::DEPTH ) );
+					_cam.retrieveMeasure(slMat, sl::MEASURE_DEPTH );
       else
         LOG(WARNING) << "Asked for depth after begin configured not to compute depth";
+
+			cvMat = slMat2cvMat( slMat );
   }
 
   virtual ImageSize imageSize( void ) const
   {
-    return ZedImageSize( _cam->getImageSize() );
+		sl::CameraInformation camInfo( _cam.getCameraInformation() );
+    return ZedImageSize( camInfo.calibration_parameters.left_cam.image_size );
   }
 
 protected:
 
-  sl::Camera *_cam;
-  sl::SENSING_MODE _mode;
+  sl::Camera &_cam;
+	sl::RuntimeParameters _runtimeParameters;
   bool _computeDepth;
 
 

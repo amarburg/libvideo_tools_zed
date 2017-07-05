@@ -184,6 +184,7 @@ int main( int argc, char** argv )
 
 			const bool doDisplayThisFrame = (doDisplay && (count % skip == 0));
 
+			// Haven't tested this yet...
 			// if( svoOutputArg.isSet() ) {
 			//
 			//

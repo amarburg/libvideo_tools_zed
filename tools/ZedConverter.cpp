@@ -64,10 +64,10 @@ int main( int argc, char** argv )
 		//TCLAP::ValueArg<std::string> resolutionArg("r","resolution","Input resolution: hd2k,hd1080,hd720,vga",false,"hd1080","", cmd);
 		//TCLAP::ValueArg<float> fpsArg("f","fps","Input FPS, otherwise defaults to max FPS from input source",false,0.0,"", cmd);
 
-		TCLAP::ValueArg<std::string> svoInputArg("i","svo-input","Input SVO file",true,"","", cmd);
+		TCLAP::ValueArg<std::string> svoInputArg("i","svo-input","Input SVO file",true,"","SVO input file", cmd);
 
-		TCLAP::ValueArg<std::string> loggerOutputArg("l","log-output","Output Logger filename",false,"","", cmd);
-		TCLAP::ValueArg<std::string> compressionArg("","compression","",false,"snappy","SVO filename", cmd);
+		TCLAP::ValueArg<std::string> loggerOutputArg("l","log-output","Output Logger filename",false,"","Output logger filename", cmd);
+		TCLAP::ValueArg<std::string> compressionArg("","compression","",false,"snappy","{snappy}", cmd);
 
 		TCLAP::ValueArg<std::string> imageOutputArg("","image-output","",false,"","Output image directory", cmd);
 		TCLAP::ValueArg<std::string> videoOutputArg("","video-output","",false,"","Output video filename", cmd);
@@ -114,47 +114,70 @@ int main( int argc, char** argv )
 
 		libvideoio::Display display( guiSwitch.getValue() );
 		libvideoio::ImageOutput imageOutput( imageOutputArg.getValue() );
-
-		//		const sl::zed::ZEDResolution_mode zedResolution = parseResolution( resolutionArg.getValue() );
+		const bool needDepth = false; //( svoOutputArg.isSet() ? false : true );
 		const int whichGpu = -1;
 
-		DataSource *dataSource = NULL;
+		sl::Camera camera;
+
+		sl::InitParameters initParameters;
 
 		LOG(INFO) << "Loading SVO file " << svoInputArg.getValue();
-		sl::zed::Camera *camera = new sl::zed::Camera( svoInputArg.getValue() );
+		initParameters.svo_input_filename = svoInputArg.getValue().c_str();
 
-		const sl::zed::MODE zedMode = (depthSwitch.getValue() ? sl::zed::MODE::QUALITY : sl::zed::MODE::NONE);
-		const bool verboseInit = true;
-		sl::zed::ERRCODE err = sl::zed::LAST_ERRCODE;
-		sl::zed::InitParams initParams;
-		initParams.mode = zedMode;
-		initParams.verbose = verboseInit;
-		initParams.disableSelfCalib = disableSelfCalibSwitch.getValue();
-		err = camera->init( initParams );
+		initParameters.sdk_gpu_id = whichGpu;
+		initParameters.sdk_verbose = true;
+		initParameters.depth_mode = sl::DEPTH_MODE_MEDIUM;
 
+		sl::RuntimeParameters runtimeParameters;
+		runtimeParameters.enable_depth = false;
+		runtimeParameters.enable_point_cloud = false;
+		runtimeParameters.sensing_mode = sl::SENSING_MODE_STANDARD;
 
-		if (err != sl::zed::SUCCESS) {
-			LOG(WARNING) << "Unable to init the Zed camera (" << err << "): " << errcode2str(err);
-			delete camera;
+		sl::ERROR_CODE err = camera.open(initParameters);
+		if (err != sl::SUCCESS) {
+			LOG(FATAL) << "Unable to init the Zed camera (" << err << "): " << sl::errorCode2str(err);
 			exit(-1);
 		}
 
-		dataSource = new ZedSource( camera, depthSwitch.getValue() );
+		// const bool recording = svoOutputArg.isSet();
+		// if( recording ) {
+		//
+		// 	auto svoCompression = sl::SVO_COMPRESSION_MODE_LOSSLESS;
+		// 	if( svoCompressionArg.getValue() == "none" ){
+		// 		svoCompression = sl::SVO_COMPRESSION_MODE_RAW;
+		// 		LOG(INFO) << "Disabling SVO compression";
+		// 	} else if( svoCompressionArg.getValue() == "lossy" ){
+		// 		svoCompression = sl::SVO_COMPRESSION_MODE_LOSSY;
+		// 		LOG(INFO) << "Using lossy SVO compression";
+		// 	} else {
+		// 		LOG(INFO) << "Using lossless SVO compression";
+		// 	}
+		//
+		// 	err = camera.enableRecording( svoOutputArg.getValue().c_str(), svoCompression  );
+		//
+		// 	if (err != sl::SUCCESS) {
+		// 		LOG(FATAL) << "Error while setting up logging (" << err << "): " << sl::errorCode2str(err);
+		// 		exit(-1);
+		// 	}
+		// }
+
+
+		ZedSource dataSource( camera, depthSwitch.getValue() );
 
 		// if( calibOutputArg.isSet() ) {
 		// 	LOG(INFO) << "Saving calibration to \"" << calibOutputArg.getValue() << "\"";
 		// 	calibrationFromZed( camera, calibOutputArg.getValue() );
 		// }
 
-		int numFrames = dataSource->numFrames();
-		float fps = dataSource->fps();
+		int numFrames = dataSource.numFrames();
+		float fps = dataSource.fps();
 
 		CHECK( fps >= 0 );
 
 		logger::LogWriter logWriter( compressLevel );
 		logger::FieldHandle_t leftHandle = 0, rightHandle = 1, depthHandle = 2;
 		if( loggerOutputArg.isSet() ) {
-			sl::zed::resolution res( camera->getImageSize() );
+			auto res = dataSource.imageSize();
 			cv::Size sz( res.width, res.height);
 
 			leftHandle = logWriter.registerField( "left", sz, logger::FIELD_BGRA_8C );
@@ -198,12 +221,12 @@ int main( int argc, char** argv )
 
 			if( (duration > 0) && (loopStart > end) ) { keepGoing = false;  break; }
 
-			if( dataSource->grab() ) {
+			if( dataSource.grab() ) {
 
 				if( count > startAtArg.getValue() ) {
 
 					cv::Mat left;
-					dataSource->getImage( 0, left );
+					dataSource.getImage( 0, left );
 
 					imageOutput.write( leftHandle, left );
 					videoOutput.write( left );
@@ -220,7 +243,7 @@ int main( int argc, char** argv )
 
 					if( rightSwitch.getValue() ) {
 						cv::Mat right;
-						dataSource->getImage( 1, right );
+						dataSource.getImage( 1, right );
 
 						imageOutput.write( rightHandle, right );
 
@@ -235,7 +258,7 @@ int main( int argc, char** argv )
 
 					if( depthSwitch.getValue() ) {
 						cv::Mat depth;
-						dataSource->getDepth( depth );
+						dataSource.getDepth( depth );
 
 						// Before normalization
 						if( loggerOutputArg.isSet() )
@@ -319,11 +342,6 @@ int main( int argc, char** argv )
 				}
 			}
 		}
-
-
-
-		if( dataSource ) delete dataSource;
-		if( camera ) delete camera;
 
 	} catch (TCLAP::ArgException &e)  // catch any exceptions
 	{
