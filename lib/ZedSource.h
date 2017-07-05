@@ -61,7 +61,7 @@ public:
 			LOG(WARNING) << "Error retrieving image from Zed: " << sl::errorCode2str(err);
 		}
 
-		cvMat = slMat2cvMat( slMat );
+		slMat2cvMat( slMat ).copyTo(cvMat);
     return 0;
   }
 
@@ -71,7 +71,8 @@ public:
 
 			sl::ERROR_CODE err;
       if( _computeDepth ){
-					auto err = _cam.retrieveMeasure(slMat, sl::MEASURE_DEPTH );
+					//auto err = _cam.retrieveMeasure(slMat, sl::MEASURE_DEPTH );
+					auto err = _cam.retrieveImage(slMat, sl::VIEW_DEPTH );
 
 					if( err != sl::SUCCESS ) {
 						LOG(WARNING) << "Error retrieving image from Zed: " << sl::errorCode2str(err);
@@ -79,7 +80,7 @@ public:
       }else
         LOG(WARNING) << "Asked for depth after begin configured not to compute depth";
 
-			cvMat = slMat2cvMat( slMat );
+			slMat2cvMat( slMat ).copyTo(cvMat);
   }
 
   virtual ImageSize imageSize( void ) const

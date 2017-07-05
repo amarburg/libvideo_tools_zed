@@ -111,7 +111,7 @@ int main( int argc, char** argv )
 	if( fpsArg.isSet() ) initParameters.camera_fps = fpsArg.getValue();
 
 	sl::RuntimeParameters runtimeParameters;
-	runtimeParameters.enable_depth = false;
+	runtimeParameters.enable_depth = true;
 	runtimeParameters.enable_point_cloud = false;
 	runtimeParameters.sensing_mode = sl::SENSING_MODE_STANDARD;
 

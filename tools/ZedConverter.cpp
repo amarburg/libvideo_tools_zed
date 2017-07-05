@@ -206,9 +206,9 @@ int main( int argc, char** argv )
 		std::chrono::steady_clock::time_point end( start + std::chrono::seconds( duration ) );
 
 		if( duration > 0 )
-		LOG(INFO) << "Will log for " << duration << " seconds or press CTRL-C to stop.";
+			LOG(INFO) << "Will log for " << duration << " seconds or press CTRL-C to stop.";
 		else
-		LOG(INFO) << "Logging now, press CTRL-C to stop.";
+			LOG(INFO) << "Logging now, press CTRL-C to stop.";
 
 		// Wait for the auto exposure and white balance
 		std::this_thread::sleep_for(std::chrono::seconds(1));
