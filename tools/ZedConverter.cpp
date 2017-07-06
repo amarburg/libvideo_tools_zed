@@ -14,7 +14,6 @@ namespace fs = boost::filesystem;
 #include "ZedUtils.h"
 #include "ZedSource.h"
 
-
 #include <tclap/CmdLine.h>
 
 #include <g3log/g3log.hpp>
@@ -30,6 +29,7 @@ namespace fs = boost::filesystem;
 #include "libvideoio/Display.h"
 #include "libvideoio/ImageOutput.h"
 #include "libvideoio/VideoOutput.h"
+#include "libvideoio/CompositeCanvas.h"
 using namespace libvideoio;
 
 
@@ -59,10 +59,7 @@ int main( int argc, char** argv )
 	signal( SIGINT, signal_handler );
 
 	try {
-		TCLAP::CmdLine cmd("LSDRecorder", ' ', "0.1");
-
-		//TCLAP::ValueArg<std::string> resolutionArg("r","resolution","Input resolution: hd2k,hd1080,hd720,vga",false,"hd1080","", cmd);
-		//TCLAP::ValueArg<float> fpsArg("f","fps","Input FPS, otherwise defaults to max FPS from input source",false,0.0,"", cmd);
+		TCLAP::CmdLine cmd("ZedRecorder", ' ', "0.1");
 
 		TCLAP::ValueArg<std::string> svoInputArg("i","svo-input","Input SVO file",true,"","SVO input file", cmd);
 
@@ -71,14 +68,14 @@ int main( int argc, char** argv )
 
 		TCLAP::ValueArg<std::string> imageOutputArg("","image-output","",false,"","Output image directory", cmd);
 		TCLAP::ValueArg<std::string> videoOutputArg("","video-output","",false,"","Output video filename", cmd);
+		TCLAP::ValueArg<std::string> videoFormatArg("","video-format","",false,"AVC1","Video format in fourcc format", cmd);
 
 		TCLAP::ValueArg<int> skipArg("","skip","",false,1,"", cmd);
+
 		TCLAP::ValueArg<int> startAtArg("","start-at","",false,0,"", cmd);
 
 
 		TCLAP::ValueArg<std::string> statisticsOutputArg("","statistics-output","",false,"","", cmd);
-
-		// TCLAP::SwitchArg noGuiSwitch("","no-gui","Don't show a GUI", cmd, false);
 
 		TCLAP::SwitchArg disableSelfCalibSwitch("","disable-self-calib","", cmd, false);
 
@@ -87,16 +84,13 @@ int main( int argc, char** argv )
 
 		TCLAP::SwitchArg guiSwitch("","display","", cmd, false);
 
-
-		TCLAP::ValueArg<int> durationArg("","duration","Duration",false,0,"seconds", cmd);
-
 		cmd.parse(argc, argv );
 
 		int compressLevel = logger::LogWriter::DefaultCompressLevel;
 		if( compressionArg.isSet() ) {
-			if( compressionArg.getValue() == "snappy" )
-			compressLevel = logger::LogWriter::SnappyCompressLevel;
-			else {
+			if( compressionArg.getValue() == "snappy" ){
+				compressLevel = logger::LogWriter::SnappyCompressLevel;
+			}else {
 				try {
 					compressLevel = std::stoi(compressionArg.getValue() );
 				} catch ( std::invalid_argument &e ) {
@@ -170,9 +164,12 @@ int main( int argc, char** argv )
 		// }
 
 		int numFrames = dataSource.numFrames();
-		float fps = dataSource.fps();
+		CHECK( numFrames > 0 );
 
+		float fps = dataSource.fps();
 		CHECK( fps >= 0 );
+
+		LOG(INFO) << "Processing " << numFrames << " from video at " << fps << " FPS";
 
 		logger::LogWriter logWriter( compressLevel );
 		logger::FieldHandle_t leftHandle = 0, rightHandle = 1, depthHandle = 2;
@@ -193,22 +190,14 @@ int main( int argc, char** argv )
 		imageOutput.registerField( rightHandle, "right" );
 		imageOutput.registerField( depthHandle, "depth" );
 
-		libvideoio::VideoOutput videoOutput( videoOutputArg.getValue(), fps > 0 ? fps : 30 );
+		libvideoio::VideoOutput videoOutput( videoOutputArg.getValue(),
+		fps > 0 ? fps : 30, videoFormatArg.getValue() );
 
-		int dt_us = (fps > 0) ? (1e6/fps) : 0;
-		const float sleepFudge = 1.0;
-		dt_us *= sleepFudge;
+		// int dt_us = (fps > 0) ? (1e6/fps) : 0;
+		// const float sleepFudge = 1.0;
+		// dt_us *= sleepFudge;
 
-		//LOG(INFO) << "Input is at " << resolutionToString( zedResolution ) << " at nominal " << fps << "FPS";
-
-		std::chrono::steady_clock::time_point start( std::chrono::steady_clock::now() );
-		int duration = durationArg.getValue();
-		std::chrono::steady_clock::time_point end( start + std::chrono::seconds( duration ) );
-
-		if( duration > 0 )
-			LOG(INFO) << "Will log for " << duration << " seconds or press CTRL-C to stop.";
-		else
-			LOG(INFO) << "Logging now, press CTRL-C to stop.";
+		std::chrono::steady_clock::time_point startTime( std::chrono::steady_clock::now() );
 
 		// Wait for the auto exposure and white balance
 		std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -219,63 +208,41 @@ int main( int argc, char** argv )
 
 			std::chrono::steady_clock::time_point loopStart( std::chrono::steady_clock::now() );
 
-			if( (duration > 0) && (loopStart > end) ) { keepGoing = false;  break; }
-
 			if( dataSource.grab() ) {
 
-				if( count > startAtArg.getValue() ) {
+				if( count < startAtArg.getValue() ) continue;
 
-					cv::Mat left;
-					dataSource.getImage( 0, left );
+				cv::Mat left, right, depth;
+				dataSource.getImage( 0, left );
 
-					imageOutput.write( leftHandle, left );
-					videoOutput.write( left );
+				imageOutput.write( leftHandle, left );
 
-					if( loggerOutputArg.isSet() ) {
-						logWriter.newFrame();
-						// This makes a copy of the data to send it to the compressor
-						logWriter.addField( leftHandle, left );
-					}
+				if( rightSwitch.getValue() ) {
+					dataSource.getImage( 1, right );
+					imageOutput.write( rightHandle, right );
+				}
 
-					if( count % skip == 0 ) {
-						display.showLeft( left );
-					}
+				if( depthSwitch.getValue() ) {
+					dataSource.getDepth( depth );
 
-					if( rightSwitch.getValue() ) {
-						cv::Mat right;
-						dataSource.getImage( 1, right );
+					// Normalize depth
+					double mn = 1.0, mx = 1.0;
+					minMaxLoc( depth, &mn, &mx );
+					Mat depthInt( depth.cols, depth.rows, CV_8UC1 ), depthNorm( depth.cols, depth.rows, depth.type() );
+					depthNorm = depth * 255 / mx;
+					depthNorm.convertTo( depthInt, CV_8UC1 );
 
-						imageOutput.write( rightHandle, right );
+					imageOutput.write( depthHandle, depthInt );
+				}
 
-						if( loggerOutputArg.isSet() ) {
-							logWriter.addField( rightHandle, right.data );
-						}
+				// Handler loger output
+				if( loggerOutputArg.isSet() ) {
+					logWriter.newFrame();
+					logWriter.addField( leftHandle, left );
+					if( rightSwitch.isSet() ) logWriter.addField( rightHandle, right.data );
 
-						if( count % skip == 0 )
-						display.showRight( right );
-
-					}
-
-					if( depthSwitch.getValue() ) {
-						cv::Mat depth;
-						dataSource.getDepth( depth );
-
-						// Before normalization
-						if( loggerOutputArg.isSet() )
-						logWriter.addField( depthHandle, depth.data );
-
-						// Normalize depth
-						double mn = 1.0, mx = 1.0;
-						minMaxLoc( depth, &mn, &mx );
-						Mat depthInt( depth.cols, depth.rows, CV_8UC1 ), depthNorm( depth.cols, depth.rows, depth.type() );
-						depthNorm = depth * 255 / mx;
-						depthNorm.convertTo( depthInt, CV_8UC1 );
-
-						imageOutput.write( depthHandle, depthInt );
-
-						if( count % skip == 0 )
-						display.showDepth( depth );
-					}
+					// Use non-normalized depth
+					if( depthSwitch.getValue() ) logWriter.addField( depthHandle, depth.data );
 
 					if( loggerOutputArg.isSet() ) {
 						const bool doBlock = false; //( dt_us == 0 );
@@ -285,19 +252,31 @@ int main( int argc, char** argv )
 					}
 				}
 
+				// Handle video output
+				if( videoOutput.isActive() ) {
+					cv::Mat vidOut;
+					if( rightSwitch.getValue() ) {
+						CompositeCanvas comp( left, right );
+						vidOut = comp;
+					} else {
+						vidOut = left;
+					}
+					videoOutput.write( vidOut );
+				}
+
+				// Handle display output
+				if( count % skip == 0 ) {
+					display.showLeft( left );
+
+					if( rightSwitch.getValue() ) display.showRight( right );
+					display.showDepth( depth );
+
+					display.waitKey();
+				}
+
 			} else {
 				LOG(WARNING) << "Problem grabbing from camera.";
 			}
-
-			if( count % skip == 0 ) display.waitKey();
-
-
-			if( dt_us > 0 ) {
-				std::chrono::steady_clock::time_point sleepTarget( loopStart + std::chrono::microseconds( dt_us ) );
-				//if( std::chrono::steady_clock::now() < sleepTarget )
-				std::this_thread::sleep_until( sleepTarget );
-			}
-
 
 			count++;
 
@@ -310,7 +289,7 @@ int main( int argc, char** argv )
 		LOG(INFO) << "Cleaning up...";
 		//if( camera && svoOutputArg.isSet() ) camera->stopRecording();
 
-		std::chrono::duration<float> dur( std::chrono::steady_clock::now()  - start );
+		std::chrono::duration<float> dur( std::chrono::steady_clock::now()  - startTime );
 
 		LOG(INFO) << "Recorded " << count << " frames in " <<   dur.count();
 		LOG(INFO) << " Average of " << (float)count / dur.count() << " FPS";
