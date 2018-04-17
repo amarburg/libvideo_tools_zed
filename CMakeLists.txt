@@ -1,8 +1,10 @@
-cmake_minimum_required(VERSION 2.8.7)
-project(libvideoio_zed)
+cmake_minimum_required(VERSION 3.5)
+if( NOT FIPS_IMPORT )
+        get_filename_component(FIPS_ROOT_DIR "../fips" ABSOLUTE)
+        include("${FIPS_ROOT_DIR}/cmake/fips.cmake")
 
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup()
+        fips_setup(PROJECT libvideoio_zed)
+endif()
 
 find_package(Eigen3 REQUIRED )
 find_package(Boost COMPONENTS filesystem system program_options REQUIRED )  #n.b. program_options is only required for my version of Stereolabs "Recorder"
@@ -51,19 +53,30 @@ find_package(OpenCV ${OPENCV_VERSION} COMPONENTS ${OPENCV_COMPONENTS} REQUIRED)
 
 ## Set global include paths
 set( LIBVIDEO_TOOLS_INCLUDE_DIRS
-  ${CMAKE_SOURCE_DIR}/lib
+  ${CMAKE_SOURCE_DIR}/include
 	${CUDA_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
+  	${OpenCV_INCLUDE_DIRS}
 	${EIGEN3_INCLUDE_DIR}
-	${ZED_INCLUDE_DIRS}
-	${CONAN_INCLUDE_DIRS} )
+	${ZED_INCLUDE_DIRS} )
 
 include_directories( ${LIBVIDEO_TOOLS_INCLUDE_DIRS} )
 
-#add_subdirectory("lib/")
-add_subdirectory("tools/")
+#fips_add_subdirectory("lib/")
 
-option( BUILD_UNIT_TESTS "Build unit tests" OFF )
-if( BUILD_UNIT_TESTS )
-  #add_subdirectory( test/unit/ )
+if( NOT FIPS_IMPORT )
+#        set( TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/test/data" )
+#        add_definitions( -DTEST_DATA_DIR="${TEST_DATA_DIR}" )
+
+        fips_add_subdirectory("tools/")
+
+        if( FIPS_UNITTESTS )
+          fips_add_subdirectory( test/unit/ )
+        endif()
+
 endif()
+
+
+if( NOT FIPS_IMPORT)
+        fips_finish()
+endif()
+

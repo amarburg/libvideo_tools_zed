@@ -4,19 +4,21 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_executable( ZedConverter ZedConverter.cpp)
-target_link_libraries( ZedConverter
-  ${ZED_CUDA_LIBRARIES}
+fips_begin_app( ZedConverter cmdline )
+	fips_files( ZedConverter.cpp )
+  fips_libs( ${ZED_CUDA_LIBRARIES}
   ${Boost_LIBRARIES}
   ${OpenCV_LIBS}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${CONAN_LIBS} )
+  ${CMAKE_THREAD_LIBS_INIT} )
+  fips_deps( logger videoio )
+fips_end_app()
 
-add_executable( ZedRecorder ZedRecorder.cpp)
-target_link_libraries( ZedRecorder
-  ${ZED_CUDA_LIBRARIES}
+fips_begin_app( ZedRecorder cmdline )
+	fips_files( ZedRecorder.cpp )
+  fips_libs(${ZED_CUDA_LIBRARIES}
   ${Boost_LIBRARIES}
   ${OpenCV_LIBS}
   ${CMAKE_THREAD_LIBS_INIT}
-  ${CUDA_LIBRARIES}
-  ${CONAN_LIBS} )
+  ${CUDA_LIBRARIES} )
+  fips_deps( logger videoio )
+fips_end_app()

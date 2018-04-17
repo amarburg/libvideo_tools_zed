@@ -11,8 +11,8 @@ using namespace std;
 namespace fs = boost::filesystem;
 
 #include <sl/Camera.hpp>
-#include "ZedUtils.h"
-#include "ZedSource.h"
+#include "libvideoio_zed/ZedUtils.h"
+#include "libvideoio_zed/ZedSource.h"
 
 #include <tclap/CmdLine.h>
 
